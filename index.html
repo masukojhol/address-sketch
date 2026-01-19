@@ -164,50 +164,123 @@
             width: 100%;
         }
 
-        /* Sketch Output */
-        .sketch-container {
-            background: #fff;
-            border-radius: 12px;
-            padding: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        /* Route Display */
+        .route-display {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
-        .sketch-header {
+        .route-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
+            padding: 0 8px;
         }
-        .sketch-header h3 {
+        .route-header h3 {
+            font-size: 16px;
+            color: #fff;
+            font-weight: 600;
+        }
+        .route-distance {
             font-size: 14px;
-            color: #333;
+            color: #4ade80;
+            font-weight: 500;
         }
-        #sketchCanvas {
+        .route-canvas-wrapper {
+            position: relative;
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        #routeCanvas {
             width: 100%;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            background: #fff;
+            display: block;
         }
-
-        .sketch-actions {
+        .route-controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ctrl-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+        }
+        .ctrl-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+        .route-info {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+        .route-actions {
             display: flex;
             gap: 8px;
             margin-top: 12px;
             flex-wrap: wrap;
         }
-        .sketch-actions button {
+        .route-actions button {
             flex: 1;
-            min-width: 100px;
-            padding: 10px 16px;
+            min-width: 80px;
+            padding: 12px 16px;
             border: none;
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 10px;
+            font-size: 14px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all 0.2s;
         }
-        .btn-primary { background: #4a90d9; color: white; }
-        .btn-secondary { background: #e0e0e0; color: #333; }
+        .btn-primary { background: linear-gradient(135deg, #4ade80, #22c55e); color: #000; }
+        .btn-primary:hover { transform: translateY(-2px); }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
         .btn-danger { background: #e74c3c; color: white; }
+        .turn-instructions {
+            margin-top: 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .turn-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: #e2e8f0;
+            font-size: 13px;
+        }
+        .turn-item:last-child { border-bottom: none; }
+        .turn-icon {
+            width: 28px;
+            height: 28px;
+            background: rgba(74,222,128,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
 
         /* Manual Draw Tab */
         .toolbar {
@@ -425,25 +498,27 @@
                 <div id="map"></div>
             </div>
 
-            <!-- Sketch Output -->
-            <div class="sketch-container" id="sketchContainer" style="display:none;">
-                <div class="sketch-header">
-                    <h3>📝 Simplified Sketch (Easy to Draw on Paper)</h3>
+            <!-- Animated Route Display -->
+            <div class="route-display" id="routeDisplay" style="display:none;">
+                <div class="route-header">
+                    <h3 id="routeTitle">Your Route</h3>
+                    <span class="route-distance" id="routeDistanceLabel"></span>
                 </div>
-                <canvas id="sketchCanvas" width="800" height="500"></canvas>
-                <div class="sketch-actions">
-                    <button class="btn-primary" onclick="saveSketch()">💾 Save Image</button>
+                <div class="route-canvas-wrapper">
+                    <canvas id="routeCanvas" width="900" height="600"></canvas>
+                    <div class="route-controls">
+                        <button class="ctrl-btn" onclick="zoomRoute(1.2)" title="Zoom In">+</button>
+                        <button class="ctrl-btn" onclick="zoomRoute(0.8)" title="Zoom Out">−</button>
+                        <button class="ctrl-btn" onclick="resetZoom()" title="Reset">↺</button>
+                    </div>
+                    <div class="route-info" id="routeInfo"></div>
+                </div>
+                <div class="route-actions">
+                    <button class="btn-primary" onclick="replayAnimation()">▶️ Replay</button>
+                    <button class="btn-secondary" onclick="saveRoute()">💾 Save</button>
                     <button class="btn-secondary" onclick="window.print()">🖨️ Print</button>
-                    <button class="btn-secondary" onclick="regenerate()">🔄 Regenerate</button>
                 </div>
-                <div class="legend">
-                    <h4>Legend (for drawing on paper):</h4>
-                    <div class="legend-item"><span class="legend-icon">━━</span> Main Road</div>
-                    <div class="legend-item"><span class="legend-icon">●</span> Turn Point</div>
-                    <div class="legend-item"><span class="legend-icon">🏠</span> Your Home</div>
-                    <div class="legend-item"><span class="legend-icon">🏦</span> Starting Point (Bank)</div>
-                    <div class="legend-item"><span class="legend-icon">⭐</span> Landmark</div>
-                </div>
+                <div class="turn-instructions" id="turnInstructions"></div>
             </div>
         </div>
 
@@ -805,16 +880,18 @@
                     throw new Error('Could not find a route between these locations.');
                 }
 
-                // Step 3: Get landmarks along route
-                statusMsg.textContent = 'Finding landmarks...';
-                landmarks = await getLandmarks(route.bbox);
+                // Step 3: Get landmarks and rivers along route
+                statusMsg.textContent = 'Finding landmarks and rivers...';
+                const poiData = await getLandmarks(route.bbox, route.coordinates);
+                landmarks = poiData.landmarks;
+                const rivers = poiData.rivers;
 
                 // Step 4: Show map
                 showMap(fromCoords, toCoords, route);
 
                 // Step 5: Generate simplified sketch
                 statusMsg.textContent = 'Drawing sketch...';
-                await generateSketch(fromCoords, toCoords, route, landmarks, from, to);
+                await generateSketch(fromCoords, toCoords, route, landmarks, rivers, from, to);
 
                 statusMsg.textContent = 'Route generated! Scroll down to see the sketch.';
                 statusMsg.className = 'status-msg';
@@ -890,17 +967,31 @@
             });
         }
 
-        async function getLandmarks(bbox) {
-            const padding = 0.002;
+        async function getLandmarks(bbox, routeCoords) {
+            // Larger padding for better landmark coverage
+            const padding = 0.01;
+            const b = {
+                minLat: bbox.minLat - padding,
+                maxLat: bbox.maxLat + padding,
+                minLng: bbox.minLng - padding,
+                maxLng: bbox.maxLng + padding
+            };
+
             const query = `
-                [out:json][timeout:25];
+                [out:json][timeout:30];
                 (
-                    node["amenity"~"hospital|bank|fuel|school|place_of_worship|police"](${bbox.minLat - padding},${bbox.minLng - padding},${bbox.maxLat + padding},${bbox.maxLng + padding});
-                    node["shop"~"supermarket|mall"](${bbox.minLat - padding},${bbox.minLng - padding},${bbox.maxLat + padding},${bbox.maxLng + padding});
-                    node["railway"="station"](${bbox.minLat - padding},${bbox.minLng - padding},${bbox.maxLat + padding},${bbox.maxLng + padding});
-                    node["highway"="traffic_signals"](${bbox.minLat - padding},${bbox.minLng - padding},${bbox.maxLat + padding},${bbox.maxLng + padding});
+                    // Landmarks
+                    node["amenity"~"hospital|bank|fuel|school|place_of_worship|police|bus_station|marketplace"](${b.minLat},${b.minLng},${b.maxLat},${b.maxLng});
+                    node["shop"~"supermarket|mall|department_store"](${b.minLat},${b.minLng},${b.maxLat},${b.maxLng});
+                    node["railway"="station"](${b.minLat},${b.minLng},${b.maxLat},${b.maxLng});
+                    node["highway"~"traffic_signals|bus_stop"](${b.minLat},${b.minLng},${b.maxLat},${b.maxLng});
+                    node["tourism"~"hotel|viewpoint"](${b.minLat},${b.minLng},${b.maxLat},${b.maxLng});
+                    node["natural"="peak"](${b.minLat},${b.minLng},${b.maxLat},${b.maxLng});
+                    // Rivers and water
+                    way["waterway"~"river|stream"](${b.minLat},${b.minLng},${b.maxLat},${b.maxLng});
+                    way["natural"="water"](${b.minLat},${b.minLng},${b.maxLat},${b.maxLng});
                 );
-                out body 30;
+                out body geom 50;
             `;
 
             try {
@@ -910,15 +1001,51 @@
                 });
                 const data = await response.json();
 
-                return data.elements.map(el => ({
-                    lat: el.lat,
-                    lng: el.lon,
-                    type: el.tags.amenity || el.tags.shop || el.tags.railway || el.tags.highway,
-                    name: el.tags.name || ''
-                })).slice(0, 12);
+                const landmarks = [];
+                const rivers = [];
+
+                data.elements.forEach(el => {
+                    if (el.type === 'way' && (el.tags.waterway || el.tags.natural === 'water')) {
+                        // It's a river/water body
+                        if (el.geometry) {
+                            rivers.push({
+                                type: 'river',
+                                name: el.tags.name || '',
+                                coords: el.geometry.map(g => ({ lat: g.lat, lng: g.lon }))
+                            });
+                        }
+                    } else if (el.type === 'node') {
+                        // It's a landmark
+                        landmarks.push({
+                            lat: el.lat,
+                            lng: el.lon,
+                            type: el.tags.amenity || el.tags.shop || el.tags.railway || el.tags.highway || el.tags.tourism || el.tags.natural,
+                            name: el.tags.name || ''
+                        });
+                    }
+                });
+
+                // Filter landmarks to those near the route
+                const nearbyLandmarks = landmarks.filter(lm => {
+                    return isNearRoute(lm, routeCoords, 0.008); // ~800m from route
+                }).slice(0, 15);
+
+                return { landmarks: nearbyLandmarks, rivers };
             } catch (e) {
-                return [];
+                console.error('Landmark fetch error:', e);
+                return { landmarks: [], rivers: [] };
             }
+        }
+
+        function isNearRoute(point, routeCoords, threshold) {
+            for (let i = 0; i < routeCoords.length; i++) {
+                const dist = Math.sqrt(
+                    Math.pow(point.lat - routeCoords[i].lat, 2) +
+                    Math.pow(point.lng - routeCoords[i].lng, 2)
+                );
+                if (dist < threshold) return true;
+            }
+            return false;
         }
 
         function showMap(from, to, route) {
@@ -953,212 +1080,460 @@
             }
         }
 
-        async function generateSketch(from, to, route, landmarks, fromLabel, toLabel) {
-            const container = document.getElementById('sketchContainer');
+        // ==================== ANIMATED ROUTE VISUALIZATION ====================
+        let routeCanvas, routeCtx;
+        let currentZoom = 1;
+        let animationId = null;
+        let routeRenderData = null;
+
+        async function generateSketch(from, to, route, landmarks, rivers, fromLabel, toLabel) {
+            const container = document.getElementById('routeDisplay');
             container.style.display = 'block';
 
-            const canvas = document.getElementById('sketchCanvas');
-            const ctx = canvas.getContext('2d');
+            // Update header
+            document.getElementById('routeTitle').textContent = 'Your Route';
+            document.getElementById('routeDistanceLabel').textContent = `${(route.distance / 1000).toFixed(1)} km`;
 
-            // Clear canvas
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            routeCanvas = document.getElementById('routeCanvas');
+            routeCtx = routeCanvas.getContext('2d');
 
-            const padding = 70;
-            const width = canvas.width - padding * 2;
-            const height = canvas.height - padding * 2;
+            const padding = 80;
+            const width = routeCanvas.width - padding * 2;
+            const height = routeCanvas.height - padding * 2;
 
             // Calculate bounds
-            const bbox = route.bbox;
+            const bbox = { ...route.bbox };
             const scaleX = width / (bbox.maxLng - bbox.minLng || 0.001);
             const scaleY = height / (bbox.maxLat - bbox.minLat || 0.001);
-            const scale = Math.min(scaleX, scaleY) * 0.85;
+            const baseScale = Math.min(scaleX, scaleY) * 0.9;
 
             const centerLng = (bbox.minLng + bbox.maxLng) / 2;
             const centerLat = (bbox.minLat + bbox.maxLat) / 2;
 
-            function toCanvas(lat, lng) {
-                return {
-                    x: padding + width / 2 + (lng - centerLng) * scale,
-                    y: padding + height / 2 - (lat - centerLat) * scale
-                };
-            }
-
-            // Simplify route
-            const simplified = simplifyRoute(route.coordinates, 0.00008);
-
-            // Draw route as clean continuous line
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 4;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            ctx.beginPath();
-            simplified.forEach((point, i) => {
-                const p = toCanvas(point.lat, point.lng);
-                if (i === 0) ctx.moveTo(p.x, p.y);
-                else ctx.lineTo(p.x, p.y);
-            });
-            ctx.stroke();
-
-            // Draw major turn indicators (only significant turns, small markers)
-            const turns = findTurns(simplified);
-            const majorTurns = turns.filter((_, i) => i % 3 === 0).slice(0, 5); // Limit to 5 major turns
-            ctx.fillStyle = '#333';
-            majorTurns.forEach(turn => {
-                const p = toCanvas(turn.lat, turn.lng);
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-                ctx.fill();
-            });
-
-            // Draw landmarks
-            const icons = {
-                'hospital': '🏥',
-                'bank': '🏦',
-                'fuel': '⛽',
-                'school': '🏫',
-                'place_of_worship': '⛪',
-                'police': '🚔',
-                'supermarket': '🏪',
-                'mall': '🏬',
-                'station': '🚉',
-                'traffic_signals': '🚦'
+            // Store for later use
+            routeRenderData = {
+                from, to, route, landmarks, rivers, fromLabel, toLabel,
+                padding, width, height, baseScale, centerLng, centerLat, bbox
             };
 
-            ctx.font = '22px Arial';
-            landmarks.forEach(lm => {
-                const p = toCanvas(lm.lat, lm.lng);
-                const icon = icons[lm.type] || '⭐';
-                ctx.fillText(icon, p.x - 11, p.y + 8);
+            // Display turn instructions
+            displayTurnInstructions(route.steps);
 
-                if (lm.name) {
-                    ctx.font = '9px Arial';
-                    ctx.fillStyle = '#555';
-                    const shortName = lm.name.length > 12 ? lm.name.substring(0, 12) + '..' : lm.name;
-                    ctx.fillText(shortName, p.x - 11, p.y + 22);
-                    ctx.font = '22px Arial';
-                }
-            });
+            // Start animation
+            currentZoom = 1;
+            animateRoute();
 
-            // Draw start and end markers
-            const startP = toCanvas(from.lat, from.lng);
-            const endP = toCanvas(to.lat, to.lng);
-
-            // Start marker
-            ctx.font = '30px Arial';
-            ctx.fillText('🏦', startP.x - 15, startP.y + 10);
-            ctx.font = 'bold 11px Arial';
-            ctx.fillStyle = '#e74c3c';
-            ctx.fillText('START', startP.x - 20, startP.y + 32);
-
-            // End marker
-            ctx.font = '30px Arial';
-            ctx.fillStyle = '#000';
-            ctx.fillText('🏠', endP.x - 15, endP.y + 10);
-            ctx.font = 'bold 11px Arial';
-            ctx.fillStyle = '#27ae60';
-            ctx.fillText('HOME', endP.x - 18, endP.y + 32);
-
-            // Title
-            ctx.fillStyle = '#333';
-            ctx.font = 'bold 14px Arial';
-            const shortFrom = fromLabel.length > 35 ? fromLabel.substring(0, 35) + '...' : fromLabel;
-            const shortTo = toLabel.length > 35 ? toLabel.substring(0, 35) + '...' : toLabel;
-            ctx.fillText(`Route: ${shortFrom}`, 15, 22);
-            ctx.fillText(`To: ${shortTo}`, 15, 40);
-
-            // Distance
-            const distKm = (route.distance / 1000).toFixed(1);
-            ctx.font = '12px Arial';
-            ctx.fillStyle = '#666';
-            ctx.fillText(`Distance: ~${distKm} km`, canvas.width - 120, 25);
-
-            // Draw North arrow
-            ctx.fillStyle = '#999';
-            ctx.font = '14px Arial';
-            ctx.fillText('N', canvas.width - 30, 60);
-            ctx.beginPath();
-            ctx.moveTo(canvas.width - 25, 65);
-            ctx.lineTo(canvas.width - 25, 85);
-            ctx.lineTo(canvas.width - 28, 78);
-            ctx.moveTo(canvas.width - 25, 85);
-            ctx.lineTo(canvas.width - 22, 78);
-            ctx.strokeStyle = '#999';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-
-            // Store for regeneration
-            routeData = { from, to, route, landmarks, fromLabel, toLabel };
-
-            // Scroll to sketch
             container.scrollIntoView({ behavior: 'smooth' });
         }
 
-        function simplifyRoute(coords, tolerance) {
-            if (coords.length < 3) return coords;
-
-            function perpendicularDistance(point, lineStart, lineEnd) {
-                const dx = lineEnd.lng - lineStart.lng;
-                const dy = lineEnd.lat - lineStart.lat;
-                if (dx === 0 && dy === 0) {
-                    return Math.sqrt(Math.pow(point.lng - lineStart.lng, 2) + Math.pow(point.lat - lineStart.lat, 2));
-                }
-                const t = ((point.lng - lineStart.lng) * dx + (point.lat - lineStart.lat) * dy) / (dx * dx + dy * dy);
-                const nearestLng = lineStart.lng + t * dx;
-                const nearestLat = lineStart.lat + t * dy;
-                return Math.sqrt(Math.pow(point.lng - nearestLng, 2) + Math.pow(point.lat - nearestLat, 2));
-            }
-
-            function simplify(points, start, end, tolerance, result) {
-                let maxDist = 0;
-                let maxIndex = 0;
-                for (let i = start + 1; i < end; i++) {
-                    const dist = perpendicularDistance(points[i], points[start], points[end]);
-                    if (dist > maxDist) {
-                        maxDist = dist;
-                        maxIndex = i;
-                    }
-                }
-                if (maxDist > tolerance) {
-                    simplify(points, start, maxIndex, tolerance, result);
-                    result.push(points[maxIndex]);
-                    simplify(points, maxIndex, end, tolerance, result);
-                }
-            }
-
-            const result = [coords[0]];
-            simplify(coords, 0, coords.length - 1, tolerance, result);
-            result.push(coords[coords.length - 1]);
-            return result;
+        function toCanvasCoord(lat, lng) {
+            const d = routeRenderData;
+            const scale = d.baseScale * currentZoom;
+            return {
+                x: d.padding + d.width / 2 + (lng - d.centerLng) * scale,
+                y: d.padding + d.height / 2 - (lat - d.centerLat) * scale
+            };
         }
 
-        function findTurns(coords) {
-            const turns = [];
-            for (let i = 1; i < coords.length - 1; i++) {
+        function animateRoute() {
+            if (animationId) cancelAnimationFrame(animationId);
+
+            const d = routeRenderData;
+            const coords = d.route.coordinates;
+            let currentIndex = 0;
+            const speed = Math.max(1, Math.floor(coords.length / 120)); // Adjust speed based on route length
+
+            function draw() {
+                // Clear canvas with dark background
+                routeCtx.fillStyle = '#0f172a';
+                routeCtx.fillRect(0, 0, routeCanvas.width, routeCanvas.height);
+
+                // Draw grid pattern
+                drawGrid();
+
+                // Draw rivers
+                drawRivers(d.rivers);
+
+                // Draw fading side roads at turns
+                drawSideRoads(coords, currentIndex);
+
+                // Draw main road (traveled portion with glow)
+                drawMainRoad(coords, currentIndex);
+
+                // Draw landmarks
+                drawLandmarks(d.landmarks);
+
+                // Draw start marker
+                const startP = toCanvasCoord(d.from.lat, d.from.lng);
+                drawMarker(startP.x, startP.y, '📍', 'START', '#ef4444');
+
+                // Draw end marker
+                const endP = toCanvasCoord(d.to.lat, d.to.lng);
+                drawMarker(endP.x, endP.y, '🏠', 'HOME', '#22c55e');
+
+                // Draw animated car/dot on current position
+                if (currentIndex < coords.length) {
+                    const pos = toCanvasCoord(coords[currentIndex].lat, coords[currentIndex].lng);
+                    drawAnimatedDot(pos.x, pos.y);
+                }
+
+                // Draw compass
+                drawCompass();
+
+                // Continue animation
+                if (currentIndex < coords.length - 1) {
+                    currentIndex += speed;
+                    if (currentIndex >= coords.length) currentIndex = coords.length - 1;
+                    animationId = requestAnimationFrame(draw);
+                } else {
+                    // Animation complete - draw final state
+                    drawFinalRoute();
+                }
+            }
+
+            draw();
+        }
+
+        function drawGrid() {
+            routeCtx.strokeStyle = 'rgba(255,255,255,0.03)';
+            routeCtx.lineWidth = 1;
+            const gridSize = 40;
+            for (let x = 0; x < routeCanvas.width; x += gridSize) {
+                routeCtx.beginPath();
+                routeCtx.moveTo(x, 0);
+                routeCtx.lineTo(x, routeCanvas.height);
+                routeCtx.stroke();
+            }
+            for (let y = 0; y < routeCanvas.height; y += gridSize) {
+                routeCtx.beginPath();
+                routeCtx.moveTo(0, y);
+                routeCtx.lineTo(routeCanvas.width, y);
+                routeCtx.stroke();
+            }
+        }
+
+        function drawRivers(rivers) {
+            if (!rivers || rivers.length === 0) return;
+
+            routeCtx.strokeStyle = '#0ea5e9';
+            routeCtx.lineWidth = 4;
+            routeCtx.lineCap = 'round';
+            routeCtx.lineJoin = 'round';
+            routeCtx.shadowColor = '#0ea5e9';
+            routeCtx.shadowBlur = 8;
+
+            rivers.forEach(river => {
+                if (river.coords && river.coords.length > 1) {
+                    routeCtx.beginPath();
+                    river.coords.forEach((coord, i) => {
+                        const p = toCanvasCoord(coord.lat, coord.lng);
+                        if (i === 0) routeCtx.moveTo(p.x, p.y);
+                        else routeCtx.lineTo(p.x, p.y);
+                    });
+                    routeCtx.stroke();
+
+                    // River name
+                    if (river.name) {
+                        const midIdx = Math.floor(river.coords.length / 2);
+                        const midP = toCanvasCoord(river.coords[midIdx].lat, river.coords[midIdx].lng);
+                        routeCtx.shadowBlur = 0;
+                        routeCtx.font = 'italic 11px Arial';
+                        routeCtx.fillStyle = '#38bdf8';
+                        routeCtx.fillText(river.name, midP.x + 5, midP.y - 8);
+                    }
+                }
+            });
+            routeCtx.shadowBlur = 0;
+        }
+
+        function drawSideRoads(coords, upToIndex) {
+            // Find turns and draw fading alternate roads
+            for (let i = 1; i < Math.min(upToIndex, coords.length - 1); i++) {
                 const prev = coords[i - 1];
                 const curr = coords[i];
                 const next = coords[i + 1];
+
                 const angle1 = Math.atan2(curr.lat - prev.lat, curr.lng - prev.lng);
                 const angle2 = Math.atan2(next.lat - curr.lat, next.lng - curr.lng);
                 let diff = Math.abs(angle1 - angle2);
                 if (diff > Math.PI) diff = 2 * Math.PI - diff;
-                if (diff > 0.4) turns.push(curr);
+
+                // If it's a significant turn, draw fading alternate road
+                if (diff > 0.5) {
+                    const p = toCanvasCoord(curr.lat, curr.lng);
+
+                    // Draw fading road in the direction not taken
+                    const notTakenAngle = angle1; // Continue straight
+                    const fadeLength = 50;
+
+                    const gradient = routeCtx.createLinearGradient(
+                        p.x, p.y,
+                        p.x + Math.cos(notTakenAngle) * fadeLength,
+                        p.y - Math.sin(notTakenAngle) * fadeLength
+                    );
+                    gradient.addColorStop(0, 'rgba(100,100,100,0.6)');
+                    gradient.addColorStop(1, 'rgba(100,100,100,0)');
+
+                    routeCtx.strokeStyle = gradient;
+                    routeCtx.lineWidth = 12;
+                    routeCtx.lineCap = 'round';
+                    routeCtx.beginPath();
+                    routeCtx.moveTo(p.x, p.y);
+                    routeCtx.lineTo(
+                        p.x + Math.cos(notTakenAngle) * fadeLength,
+                        p.y - Math.sin(notTakenAngle) * fadeLength
+                    );
+                    routeCtx.stroke();
+                }
             }
-            return turns;
         }
 
-        function regenerate() {
-            if (routeData) {
-                generateSketch(routeData.from, routeData.to, routeData.route, routeData.landmarks, routeData.fromLabel, routeData.toLabel);
+        function drawMainRoad(coords, upToIndex) {
+            if (coords.length < 2) return;
+
+            const endIdx = Math.min(upToIndex + 1, coords.length);
+
+            // Draw road shadow
+            routeCtx.strokeStyle = 'rgba(0,0,0,0.3)';
+            routeCtx.lineWidth = 18;
+            routeCtx.lineCap = 'round';
+            routeCtx.lineJoin = 'round';
+            routeCtx.beginPath();
+            for (let i = 0; i < endIdx; i++) {
+                const p = toCanvasCoord(coords[i].lat, coords[i].lng);
+                if (i === 0) routeCtx.moveTo(p.x + 2, p.y + 2);
+                else routeCtx.lineTo(p.x + 2, p.y + 2);
             }
+            routeCtx.stroke();
+
+            // Draw road base (dark gray)
+            routeCtx.strokeStyle = '#374151';
+            routeCtx.lineWidth = 16;
+            routeCtx.beginPath();
+            for (let i = 0; i < endIdx; i++) {
+                const p = toCanvasCoord(coords[i].lat, coords[i].lng);
+                if (i === 0) routeCtx.moveTo(p.x, p.y);
+                else routeCtx.lineTo(p.x, p.y);
+            }
+            routeCtx.stroke();
+
+            // Draw road surface (lighter)
+            routeCtx.strokeStyle = '#4b5563';
+            routeCtx.lineWidth = 12;
+            routeCtx.beginPath();
+            for (let i = 0; i < endIdx; i++) {
+                const p = toCanvasCoord(coords[i].lat, coords[i].lng);
+                if (i === 0) routeCtx.moveTo(p.x, p.y);
+                else routeCtx.lineTo(p.x, p.y);
+            }
+            routeCtx.stroke();
+
+            // Draw center line (dashed yellow)
+            routeCtx.strokeStyle = '#fbbf24';
+            routeCtx.lineWidth = 2;
+            routeCtx.setLineDash([10, 15]);
+            routeCtx.beginPath();
+            for (let i = 0; i < endIdx; i++) {
+                const p = toCanvasCoord(coords[i].lat, coords[i].lng);
+                if (i === 0) routeCtx.moveTo(p.x, p.y);
+                else routeCtx.lineTo(p.x, p.y);
+            }
+            routeCtx.stroke();
+            routeCtx.setLineDash([]);
+
+            // Draw glowing route line on top
+            routeCtx.strokeStyle = '#4ade80';
+            routeCtx.lineWidth = 4;
+            routeCtx.shadowColor = '#4ade80';
+            routeCtx.shadowBlur = 10;
+            routeCtx.beginPath();
+            for (let i = 0; i < endIdx; i++) {
+                const p = toCanvasCoord(coords[i].lat, coords[i].lng);
+                if (i === 0) routeCtx.moveTo(p.x, p.y);
+                else routeCtx.lineTo(p.x, p.y);
+            }
+            routeCtx.stroke();
+            routeCtx.shadowBlur = 0;
         }
 
-        function saveSketch() {
-            const canvas = document.getElementById('sketchCanvas');
+        function drawLandmarks(landmarks) {
+            if (!landmarks) return;
+
+            const icons = {
+                'hospital': '🏥', 'bank': '🏦', 'fuel': '⛽', 'school': '🏫',
+                'place_of_worship': '⛪', 'police': '🚔', 'supermarket': '🏪',
+                'mall': '🏬', 'station': '🚉', 'traffic_signals': '🚦',
+                'bus_stop': '🚏', 'bus_station': '🚌', 'hotel': '🏨', 'peak': '⛰️'
+            };
+
+            landmarks.forEach(lm => {
+                const p = toCanvasCoord(lm.lat, lm.lng);
+                const icon = icons[lm.type] || '⭐';
+
+                // Draw background circle
+                routeCtx.fillStyle = 'rgba(0,0,0,0.5)';
+                routeCtx.beginPath();
+                routeCtx.arc(p.x, p.y, 18, 0, Math.PI * 2);
+                routeCtx.fill();
+
+                // Draw icon
+                routeCtx.font = '20px Arial';
+                routeCtx.fillText(icon, p.x - 10, p.y + 7);
+
+                // Draw name
+                if (lm.name) {
+                    routeCtx.font = '10px Arial';
+                    routeCtx.fillStyle = '#94a3b8';
+                    const shortName = lm.name.length > 15 ? lm.name.substring(0, 15) + '..' : lm.name;
+                    routeCtx.fillText(shortName, p.x - 20, p.y + 30);
+                }
+            });
+        }
+
+        function drawMarker(x, y, icon, label, color) {
+            // Glow
+            routeCtx.shadowColor = color;
+            routeCtx.shadowBlur = 20;
+            routeCtx.fillStyle = color;
+            routeCtx.beginPath();
+            routeCtx.arc(x, y, 8, 0, Math.PI * 2);
+            routeCtx.fill();
+            routeCtx.shadowBlur = 0;
+
+            // Icon
+            routeCtx.font = '28px Arial';
+            routeCtx.fillText(icon, x - 14, y - 15);
+
+            // Label
+            routeCtx.font = 'bold 12px Arial';
+            routeCtx.fillStyle = color;
+            routeCtx.fillText(label, x - 18, y + 28);
+        }
+
+        function drawAnimatedDot(x, y) {
+            const time = Date.now() / 200;
+            const pulse = Math.sin(time) * 3 + 8;
+
+            routeCtx.shadowColor = '#4ade80';
+            routeCtx.shadowBlur = 15;
+            routeCtx.fillStyle = '#4ade80';
+            routeCtx.beginPath();
+            routeCtx.arc(x, y, pulse, 0, Math.PI * 2);
+            routeCtx.fill();
+
+            routeCtx.fillStyle = '#fff';
+            routeCtx.beginPath();
+            routeCtx.arc(x, y, 4, 0, Math.PI * 2);
+            routeCtx.fill();
+            routeCtx.shadowBlur = 0;
+        }
+
+        function drawCompass() {
+            const x = routeCanvas.width - 40;
+            const y = 50;
+
+            routeCtx.fillStyle = 'rgba(255,255,255,0.1)';
+            routeCtx.beginPath();
+            routeCtx.arc(x, y, 20, 0, Math.PI * 2);
+            routeCtx.fill();
+
+            routeCtx.fillStyle = '#ef4444';
+            routeCtx.font = 'bold 14px Arial';
+            routeCtx.fillText('N', x - 5, y - 5);
+
+            routeCtx.strokeStyle = '#ef4444';
+            routeCtx.lineWidth = 2;
+            routeCtx.beginPath();
+            routeCtx.moveTo(x, y);
+            routeCtx.lineTo(x, y - 15);
+            routeCtx.stroke();
+        }
+
+        function drawFinalRoute() {
+            const d = routeRenderData;
+
+            // Clear and redraw everything
+            routeCtx.fillStyle = '#0f172a';
+            routeCtx.fillRect(0, 0, routeCanvas.width, routeCanvas.height);
+
+            drawGrid();
+            drawRivers(d.rivers);
+            drawSideRoads(d.route.coordinates, d.route.coordinates.length);
+            drawMainRoad(d.route.coordinates, d.route.coordinates.length);
+            drawLandmarks(d.landmarks);
+
+            const startP = toCanvasCoord(d.from.lat, d.from.lng);
+            drawMarker(startP.x, startP.y, '📍', 'START', '#ef4444');
+
+            const endP = toCanvasCoord(d.to.lat, d.to.lng);
+            drawMarker(endP.x, endP.y, '🏠', 'HOME', '#22c55e');
+
+            drawCompass();
+
+            // Update info
+            document.getElementById('routeInfo').innerHTML = `
+                <strong>${d.fromLabel.substring(0, 30)}${d.fromLabel.length > 30 ? '...' : ''}</strong><br>
+                → ${d.toLabel.substring(0, 30)}${d.toLabel.length > 30 ? '...' : ''}
+            `;
+        }
+
+        function displayTurnInstructions(steps) {
+            const container = document.getElementById('turnInstructions');
+            if (!steps || steps.length === 0) {
+                container.innerHTML = '<div style="color:#64748b;text-align:center;">No turn-by-turn directions available</div>';
+                return;
+            }
+
+            const turnIcons = {
+                'turn-left': '↰', 'turn-right': '↱', 'straight': '↑',
+                'merge': '⤨', 'roundabout': '↻', 'uturn': '↩'
+            };
+
+            let html = '';
+            steps.slice(0, 8).forEach((step, i) => {
+                const instruction = step.instructions ? step.instructions.replace(/<[^>]*>/g, '') : 'Continue';
+                const dist = step.distance ? step.distance.text : '';
+                let icon = '→';
+
+                if (instruction.toLowerCase().includes('left')) icon = '↰';
+                else if (instruction.toLowerCase().includes('right')) icon = '↱';
+                else if (instruction.toLowerCase().includes('straight') || instruction.toLowerCase().includes('continue')) icon = '↑';
+
+                html += `
+                    <div class="turn-item">
+                        <div class="turn-icon">${icon}</div>
+                        <div style="flex:1;">${instruction}</div>
+                        <div style="color:#64748b;font-size:11px;">${dist}</div>
+                    </div>
+                `;
+            });
+
+            if (steps.length > 8) {
+                html += `<div style="text-align:center;color:#64748b;padding:8px;">+ ${steps.length - 8} more steps</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function zoomRoute(factor) {
+            currentZoom *= factor;
+            currentZoom = Math.max(0.5, Math.min(3, currentZoom));
+            if (routeRenderData) drawFinalRoute();
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            if (routeRenderData) drawFinalRoute();
+        }
+
+        function replayAnimation() {
+            if (routeRenderData) animateRoute();
+        }
+
+        function saveRoute() {
             const link = document.createElement('a');
-            link.download = 'address-route-sketch.png';
-            link.href = canvas.toDataURL('image/png');
+            link.download = 'route-map.png';
+            link.href = routeCanvas.toDataURL('image/png');
             link.click();
         }
 
