@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PWA Icons</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        h1 { color: #4a90d9; }
+        .icon-preview { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+        .icon-preview canvas { border: 1px solid #ddd; border-radius: 8px; }
+        button { padding: 12px 24px; background: #4a90d9; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #357abd; }
+        .status { margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px; }
+        .instructions { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 20px; }
+        code { background: #e0e0e0; padding: 2px 6px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>Click the button below to generate and download all required PWA icons.</p>
+
+    <div class="icon-preview" id="preview"></div>
+
+    <button onclick="generateIcons()">Generate & Download Icons</button>
+
+    <div class="status" id="status" style="display:none;"></div>
+
+    <div class="instructions">
+        <h3>After downloading:</h3>
+        <ol>
+            <li>Extract the downloaded icons</li>
+            <li>Place them in the <code>icons/</code> folder</li>
+            <li>Your PWA will be ready!</li>
+        </ol>
+    </div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 180, 192, 384, 512];
+
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Background
+            const radius = size * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(size - radius, 0);
+            ctx.quadraticCurveTo(size, 0, size, radius);
+            ctx.lineTo(size, size - radius);
+            ctx.quadraticCurveTo(size, size, size - radius, size);
+            ctx.lineTo(radius, size);
+            ctx.quadraticCurveTo(0, size, 0, size - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#4a90d9');
+            gradient.addColorStop(1, '#357abd');
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Draw path (road)
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = size * 0.045;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            const s = size;
+            ctx.moveTo(s * 0.2, s * 0.75);
+            ctx.lineTo(s * 0.35, s * 0.4);
+            ctx.lineTo(s * 0.5, s * 0.6);
+            ctx.lineTo(s * 0.65, s * 0.35);
+            ctx.lineTo(s * 0.8, s * 0.5);
+            ctx.stroke();
+
+            // Landmark 1 (yellow circle)
+            ctx.fillStyle = '#f39c12';
+            ctx.beginPath();
+            ctx.arc(s * 0.28, s * 0.28, s * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Landmark 2 (red circle)
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(s * 0.72, s * 0.7, s * 0.06, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bottom line
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.fillRect(s * 0.18, s * 0.82, s * 0.64, s * 0.025);
+
+            return canvas;
+        }
+
+        function generateIcons() {
+            const preview = document.getElementById('preview');
+            const status = document.getElementById('status');
+            preview.innerHTML = '';
+
+            const icons = [];
+
+            sizes.forEach(size => {
+                const canvas = createIcon(size);
+
+                // Show preview for some sizes
+                if ([72, 144, 192, 512].includes(size)) {
+                    const previewCanvas = canvas.cloneNode();
+                    previewCanvas.getContext('2d').drawImage(canvas, 0, 0);
+                    previewCanvas.style.width = Math.min(size, 100) + 'px';
+                    previewCanvas.style.height = Math.min(size, 100) + 'px';
+                    preview.appendChild(previewCanvas);
+                }
+
+                icons.push({
+                    name: `icon-${size}.png`,
+                    data: canvas.toDataURL('image/png')
+                });
+            });
+
+            // Download each icon
+            icons.forEach((icon, index) => {
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.download = icon.name;
+                    link.href = icon.data;
+                    link.click();
+                }, index * 200);
+            });
+
+            status.style.display = 'block';
+            status.innerHTML = `
+                <strong>✅ Generated ${icons.length} icons!</strong><br><br>
+                Icons being downloaded: ${icons.map(i => i.name).join(', ')}<br><br>
+                Move all downloaded files to the <code>icons/</code> folder.
+            `;
+        }
+    </script>
+</body>
+</html>

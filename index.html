@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sketch">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#4a90d9">
+    <meta name="msapplication-TileColor" content="#4a90d9">
+
+    <title>Address Sketch Tool - Draw Location Maps</title>
+    <meta name="description" content="Free PWA tool to draw address sketches and location maps for bank forms. Works offline on mobile, iPad & desktop.">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+
+    <!-- Google AdSense - Replace with your code after approval -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            overflow-x: hidden;
+            overscroll-behavior: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            touch-action: manipulation;
+        }
+
+        /* PWA Install Banner */
+        .install-banner {
+            display: none;
+            background: linear-gradient(135deg, #4a90d9, #357abd);
+            color: white;
+            padding: 12px 20px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .install-banner.show { display: flex; }
+        .install-banner button {
+            background: white;
+            color: #4a90d9;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .install-banner .close {
+            background: transparent;
+            color: white;
+            font-size: 20px;
+            padding: 5px 10px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4a90d9, #357abd);
+            color: white;
+            padding: 12px 16px;
+            padding-top: max(12px, env(safe-area-inset-top));
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .header h1 { font-size: 18px; font-weight: 600; }
+
+        .main-container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 12px;
+            gap: 15px;
+        }
+        .content-area {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Ads */
+        .ad-container {
+            background: #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 11px;
+            overflow: hidden;
+        }
+        .sidebar-ad {
+            width: 160px;
+            min-height: 600px;
+        }
+        .banner-ad {
+            height: 60px;
+            margin-bottom: 12px;
+        }
+        .bottom-ad {
+            height: 100px;
+            margin-top: 12px;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background: #fff;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .tool-group {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .tool-group.separator {
+            padding-right: 10px;
+            border-right: 1px solid #eee;
+            margin-right: 2px;
+        }
+
+        .tool-btn {
+            width: 44px;
+            height: 44px;
+            border: 2px solid #e0e0e0;
+            background: #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .tool-btn:active { transform: scale(0.95); }
+        .tool-btn.active {
+            background: #4a90d9;
+            border-color: #4a90d9;
+            color: white;
+            box-shadow: 0 2px 8px rgba(74,144,217,0.4);
+        }
+
+        .color-btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 50%;
+            border: 3px solid transparent;
+        }
+        .color-btn.active {
+            border-color: #333;
+            transform: scale(1.1);
+        }
+
+        .size-slider {
+            width: 80px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+        }
+        .size-slider input {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #e0e0e0;
+            border-radius: 3px;
+            outline: none;
+        }
+        .size-slider input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: #4a90d9;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Canvas */
+        .canvas-wrapper {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 8px;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            background: #fff;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* Landmarks */
+        .landmarks {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 10px 0;
+            border-top: 1px solid #eee;
+            margin-top: 10px;
+        }
+        .landmark-btn {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            background: #fafafa;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .landmark-btn:active {
+            background: #4a90d9;
+            color: white;
+            border-color: #4a90d9;
+        }
+        .landmark-btn span { font-size: 16px; }
+
+        /* Actions */
+        .actions {
+            display: flex;
+            gap: 8px;
+            padding-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .action-btn {
+            padding: 12px 20px;
+            border: none;
+            background: #4a90d9;
+            color: white;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .action-btn:active { transform: scale(0.97); opacity: 0.9; }
+        .action-btn.danger { background: #e74c3c; }
+        .action-btn.secondary { background: #6c757d; }
+
+        /* Text Input Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 20px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 320px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .modal-box h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .modal-box input {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            outline: none;
+        }
+        .modal-box input:focus { border-color: #4a90d9; }
+        .modal-btns {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-btns button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .modal-btns .cancel { background: #e0e0e0; }
+        .modal-btns .confirm { background: #4a90d9; color: white; }
+
+        /* Offline indicator */
+        .offline-badge {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 13px;
+            z-index: 100;
+        }
+        .offline-badge.show { display: block; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: #888;
+            font-size: 11px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar-ad { display: none; }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 { font-size: 16px; }
+            .main-container { padding: 8px; }
+            .toolbar { padding: 8px; gap: 6px; }
+            .tool-btn { width: 40px; height: 40px; font-size: 16px; }
+            .color-btn { width: 28px; height: 28px; }
+            .size-slider { width: 60px; }
+            .landmark-btn { padding: 6px 10px; font-size: 12px; }
+            .landmark-btn span { font-size: 14px; }
+            .action-btn { padding: 10px 14px; font-size: 13px; }
+            .actions { gap: 6px; }
+        }
+
+        /* iPad Landscape */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .canvas-wrapper { padding: 12px; }
+            .tool-btn { width: 48px; height: 48px; }
+        }
+
+        /* Print */
+        @media print {
+            .header, .toolbar, .actions, .landmarks, .ad-container,
+            .footer, .install-banner, .offline-badge { display: none !important; }
+            .main-container { padding: 0; max-width: none; }
+            .canvas-wrapper { box-shadow: none; padding: 0; border-radius: 0; }
+            #canvas { border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Install Banner -->
+    <div class="install-banner" id="installBanner">
+        <span>📱 Install app for offline use</span>
+        <div>
+            <button id="installBtn">Install</button>
+            <button class="close" id="closeBanner">×</button>
+        </div>
+    </div>
+
+    <header class="header">
+        <h1>Address Sketch Tool</h1>
+    </header>
+
+    <div class="main-container">
+        <!-- Left Ad -->
+        <div class="ad-container sidebar-ad">
+            <ins class="adsbygoogle" style="display:inline-block;width:160px;height:600px"
+                data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX"></ins>
+        </div>
+
+        <div class="content-area">
+            <!-- Top Ad -->
+            <div class="ad-container banner-ad">
+                <ins class="adsbygoogle" style="display:block" data-ad-format="auto"
+                    data-full-width-responsive="true" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+                    data-ad-slot="XXXXXXXXXX"></ins>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="tool-group separator">
+                    <button class="tool-btn active" id="penTool" data-tool="pen" aria-label="Pen">✏️</button>
+                    <button class="tool-btn" id="lineTool" data-tool="line" aria-label="Line">📏</button>
+                    <button class="tool-btn" id="textTool" data-tool="text" aria-label="Text">🔤</button>
+                    <button class="tool-btn" id="eraserTool" data-tool="eraser" aria-label="Eraser">🧽</button>
+                </div>
+                <div class="tool-group separator">
+                    <button class="color-btn active" style="background:#000" data-color="#000"></button>
+                    <button class="color-btn" style="background:#e74c3c" data-color="#e74c3c"></button>
+                    <button class="color-btn" style="background:#27ae60" data-color="#27ae60"></button>
+                    <button class="color-btn" style="background:#3498db" data-color="#3498db"></button>
+                    <button class="color-btn" style="background:#f39c12" data-color="#f39c12"></button>
+                </div>
+                <div class="tool-group size-slider">
+                    <input type="range" id="sizeSlider" min="1" max="12" value="3" aria-label="Brush size">
+                </div>
+            </div>
+
+            <!-- Canvas -->
+            <div class="canvas-wrapper">
+                <canvas id="canvas" width="1200" height="700"></canvas>
+
+                <!-- Landmarks -->
+                <div class="landmarks">
+                    <button class="landmark-btn" data-emoji="🏠"><span>🏠</span>Home</button>
+                    <button class="landmark-btn" data-emoji="🏦"><span>🏦</span>Bank</button>
+                    <button class="landmark-btn" data-emoji="🏥"><span>🏥</span>Hospital</button>
+                    <button class="landmark-btn" data-emoji="⛪"><span>⛪</span>Temple</button>
+                    <button class="landmark-btn" data-emoji="🕌"><span>🕌</span>Mosque</button>
+                    <button class="landmark-btn" data-emoji="🏫"><span>🏫</span>School</button>
+                    <button class="landmark-btn" data-emoji="🏪"><span>🏪</span>Shop</button>
+                    <button class="landmark-btn" data-emoji="⛽"><span>⛽</span>Petrol</button>
+                    <button class="landmark-btn" data-emoji="🚉"><span>🚉</span>Station</button>
+                    <button class="landmark-btn" data-emoji="🚦"><span>🚦</span>Signal</button>
+                    <button class="landmark-btn" data-emoji="🌳"><span>🌳</span>Park</button>
+                    <button class="landmark-btn" data-emoji="🏛️"><span>🏛️</span>Office</button>
+                    <button class="landmark-btn" data-emoji="⭐"><span>⭐</span>Mark</button>
+                </div>
+
+                <!-- Actions -->
+                <div class="actions">
+                    <button class="action-btn secondary" id="undoBtn">↩️ Undo</button>
+                    <button class="action-btn" id="saveBtn">💾 Save</button>
+                    <button class="action-btn" id="printBtn">🖨️ Print</button>
+                    <button class="action-btn danger" id="clearBtn">🗑️ Clear</button>
+                </div>
+            </div>
+
+            <!-- Bottom Ad -->
+            <div class="ad-container bottom-ad">
+                <ins class="adsbygoogle" style="display:block" data-ad-format="auto"
+                    data-full-width-responsive="true" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+                    data-ad-slot="XXXXXXXXXX"></ins>
+            </div>
+        </div>
+
+        <!-- Right Ad -->
+        <div class="ad-container sidebar-ad">
+            <ins class="adsbygoogle" style="display:inline-block;width:160px;height:600px"
+                data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX"></ins>
+        </div>
+    </div>
+
+    <footer class="footer">
+        Draw location maps for bank forms & documents • Works offline
+    </footer>
+
+    <!-- Text Modal -->
+    <div class="modal-overlay" id="textModal">
+        <div class="modal-box">
+            <h3>Add Label</h3>
+            <input type="text" id="textInput" placeholder="Enter text..." maxlength="30" autocomplete="off">
+            <div class="modal-btns">
+                <button class="cancel" id="cancelText">Cancel</button>
+                <button class="confirm" id="confirmText">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offline Badge -->
+    <div class="offline-badge" id="offlineBadge">📴 You're offline - changes saved locally</div>
+
+    <script>
+        // ===== Canvas Setup with High DPI Support =====
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', {
+            alpha: false,
+            desynchronized: true  // Better performance on supported devices
+        });
+
+        // High DPI canvas setup
+        function setupCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+
+            ctx.scale(dpr, dpr);
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+
+            // Set white background
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, rect.width, rect.height);
+
+            // Restore from saved state if exists
+            restoreCanvas();
+        }
+
+        // ===== State =====
+        let currentTool = 'pen';
+        let currentColor = '#000';
+        let currentSize = 3;
+        let isDrawing = false;
+        let lastX = 0, lastY = 0;
+        let lineStartX = 0, lineStartY = 0;
+        let history = [];
+        let historyIndex = -1;
+        let pendingLandmark = null;
+        let textPosition = null;
+        let points = []; // For smooth drawing
+
+        // ===== History Management =====
+        function saveState() {
+            // Remove any redo states
+            history = history.slice(0, historyIndex + 1);
+            history.push(canvas.toDataURL('image/png'));
+            historyIndex++;
+
+            // Limit history
+            if (history.length > 30) {
+                history.shift();
+                historyIndex--;
+            }
+
+            // Auto-save to localStorage
+            try {
+                localStorage.setItem('sketch_data', history[historyIndex]);
+            } catch(e) {}
+        }
+
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                loadState(history[historyIndex]);
+            }
+        }
+
+        function loadState(dataUrl) {
+            const img = new Image();
+            img.onload = () => {
+                const rect = canvas.getBoundingClientRect();
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, rect.width, rect.height);
+                ctx.drawImage(img, 0, 0, rect.width, rect.height);
+            };
+            img.src = dataUrl;
+        }
+
+        function restoreCanvas() {
+            const saved = localStorage.getItem('sketch_data');
+            if (saved) {
+                loadState(saved);
+                history = [saved];
+                historyIndex = 0;
+            } else {
+                saveState();
+            }
+        }
+
+        // ===== Tool Selection =====
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTool = btn.dataset.tool;
+                pendingLandmark = null;
+            });
+        });
+
+        // ===== Color Selection =====
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentColor = btn.dataset.color;
+            });
+        });
+
+        // ===== Size Slider =====
+        document.getElementById('sizeSlider').addEventListener('input', (e) => {
+            currentSize = parseInt(e.target.value);
+        });
+
+        // ===== Get Position (Touch & Mouse) =====
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        // ===== Smooth Line Drawing (Quadratic Bezier) =====
+        function drawSmoothLine() {
+            if (points.length < 2) return;
+
+            ctx.strokeStyle = currentTool === 'eraser' ? '#fff' : currentColor;
+            ctx.lineWidth = currentTool === 'eraser' ? currentSize * 4 : currentSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+
+            if (points.length === 2) {
+                ctx.lineTo(points[1].x, points[1].y);
+            } else {
+                for (let i = 1; i < points.length - 1; i++) {
+                    const midX = (points[i].x + points[i + 1].x) / 2;
+                    const midY = (points[i].y + points[i + 1].y) / 2;
+                    ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
+                }
+                const last = points.length - 1;
+                ctx.lineTo(points[last].x, points[last].y);
+            }
+
+            ctx.stroke();
+        }
+
+        // ===== Drawing Events =====
+        function startDraw(e) {
+            e.preventDefault();
+            const pos = getPos(e);
+
+            // Place landmark
+            if (pendingLandmark) {
+                ctx.font = '32px Arial';
+                ctx.fillStyle = '#000';
+                ctx.fillText(pendingLandmark, pos.x - 16, pos.y + 10);
+                pendingLandmark = null;
+                saveState();
+                return;
+            }
+
+            // Text tool
+            if (currentTool === 'text') {
+                textPosition = pos;
+                document.getElementById('textModal').classList.add('show');
+                document.getElementById('textInput').value = '';
+                setTimeout(() => document.getElementById('textInput').focus(), 100);
+                return;
+            }
+
+            isDrawing = true;
+            lastX = pos.x;
+            lastY = pos.y;
+            lineStartX = pos.x;
+            lineStartY = pos.y;
+            points = [pos];
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+
+            const pos = getPos(e);
+
+            if (currentTool === 'pen' || currentTool === 'eraser') {
+                points.push(pos);
+
+                // Keep only recent points for performance
+                if (points.length > 5) {
+                    points.shift();
+                }
+
+                // Draw from last point to current
+                ctx.strokeStyle = currentTool === 'eraser' ? '#fff' : currentColor;
+                ctx.lineWidth = currentTool === 'eraser' ? currentSize * 4 : currentSize;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+
+                lastX = pos.x;
+                lastY = pos.y;
+            }
+        }
+
+        function endDraw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+
+            if (currentTool === 'line') {
+                const pos = getPos(e);
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentSize;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(lineStartX, lineStartY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            }
+
+            isDrawing = false;
+            points = [];
+            saveState();
+        }
+
+        // Mouse events
+        canvas.addEventListener('mousedown', startDraw);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', endDraw);
+        canvas.addEventListener('mouseleave', endDraw);
+
+        // Touch events (with passive: false for preventDefault)
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', endDraw, { passive: false });
+        canvas.addEventListener('touchcancel', endDraw, { passive: false });
+
+        // ===== Landmarks =====
+        document.querySelectorAll('.landmark-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                pendingLandmark = btn.dataset.emoji;
+                // Brief visual feedback
+                btn.style.background = '#4a90d9';
+                btn.style.color = '#fff';
+                setTimeout(() => {
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }, 200);
+            });
+        });
+
+        // ===== Text Modal =====
+        document.getElementById('confirmText').addEventListener('click', addText);
+        document.getElementById('cancelText').addEventListener('click', closeTextModal);
+        document.getElementById('textInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') addText();
+            if (e.key === 'Escape') closeTextModal();
+        });
+
+        function addText() {
+            const text = document.getElementById('textInput').value.trim();
+            if (text && textPosition) {
+                ctx.font = `${16 + currentSize}px Arial`;
+                ctx.fillStyle = currentColor;
+                ctx.fillText(text, textPosition.x, textPosition.y);
+                saveState();
+            }
+            closeTextModal();
+        }
+
+        function closeTextModal() {
+            document.getElementById('textModal').classList.remove('show');
+            textPosition = null;
+        }
+
+        // ===== Action Buttons =====
+        document.getElementById('undoBtn').addEventListener('click', undo);
+
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'address-sketch.png';
+
+            // Create a clean export canvas
+            const exportCanvas = document.createElement('canvas');
+            const rect = canvas.getBoundingClientRect();
+            exportCanvas.width = rect.width * 2;
+            exportCanvas.height = rect.height * 2;
+            const exportCtx = exportCanvas.getContext('2d');
+            exportCtx.fillStyle = '#fff';
+            exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+            exportCtx.drawImage(canvas, 0, 0, exportCanvas.width, exportCanvas.height);
+
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        });
+
+        document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (confirm('Clear the entire sketch?')) {
+                const rect = canvas.getBoundingClientRect();
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, rect.width, rect.height);
+                saveState();
+                localStorage.removeItem('sketch_data');
+            }
+        });
+
+        // ===== PWA Install =====
+        let deferredPrompt;
+        const installBanner = document.getElementById('installBanner');
+        const installBtn = document.getElementById('installBtn');
+        const closeBanner = document.getElementById('closeBanner');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Show install banner if not dismissed
+            if (!localStorage.getItem('pwa_dismissed')) {
+                installBanner.classList.add('show');
+            }
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                installBanner.classList.remove('show');
+            }
+        });
+
+        closeBanner.addEventListener('click', () => {
+            installBanner.classList.remove('show');
+            localStorage.setItem('pwa_dismissed', 'true');
+        });
+
+        // ===== Offline Detection =====
+        const offlineBadge = document.getElementById('offlineBadge');
+
+        function updateOnlineStatus() {
+            if (!navigator.onLine) {
+                offlineBadge.classList.add('show');
+            } else {
+                offlineBadge.classList.remove('show');
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
+
+        // ===== Service Worker =====
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+
+        // ===== Init =====
+        window.addEventListener('load', setupCanvas);
+        window.addEventListener('resize', () => {
+            // Debounced resize
+            clearTimeout(window.resizeTimer);
+            window.resizeTimer = setTimeout(setupCanvas, 250);
+        });
+
+        // Initialize AdSense (remove if not using ads yet)
+        try {
+            (adsbygoogle = window.adsbygoogle || []).push({});
+            (adsbygoogle = window.adsbygoogle || []).push({});
+            (adsbygoogle = window.adsbygoogle || []).push({});
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        } catch(e) {}
+    </script>
+</body>
+</html>
