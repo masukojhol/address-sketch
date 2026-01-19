@@ -46,33 +46,6 @@
             padding: 12px;
         }
 
-        /* Tab Navigation */
-        .tabs {
-            display: flex;
-            background: #fff;
-            border-radius: 12px;
-            padding: 6px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            background: transparent;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .tab-btn.active {
-            background: #4a90d9;
-            color: white;
-        }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
 
         /* Route Generator */
         .route-panel {
@@ -278,119 +251,6 @@
             text-align: center;
         }
 
-        /* Manual Draw Tab */
-        .toolbar {
-            background: #fff;
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 12px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-        }
-        .tool-group {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-        .tool-group.separator {
-            padding-right: 10px;
-            border-right: 1px solid #eee;
-            margin-right: 2px;
-        }
-        .tool-btn {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #e0e0e0;
-            background: #fff;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.15s;
-        }
-        .tool-btn:active { transform: scale(0.95); }
-        .tool-btn.active {
-            background: #4a90d9;
-            border-color: #4a90d9;
-            color: white;
-        }
-        .color-btn {
-            width: 28px;
-            height: 28px;
-            padding: 0;
-            border-radius: 50%;
-            border: 3px solid transparent;
-        }
-        .color-btn.active { border-color: #333; transform: scale(1.1); }
-
-        .canvas-wrapper {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            padding: 8px;
-        }
-        #drawCanvas {
-            display: block;
-            width: 100%;
-            border-radius: 8px;
-            background: #fff;
-            touch-action: none;
-        }
-
-        .landmarks {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            padding: 10px 0;
-            border-top: 1px solid #eee;
-            margin-top: 10px;
-        }
-        .landmark-btn {
-            padding: 6px 10px;
-            border: 1px solid #e0e0e0;
-            background: #fafafa;
-            border-radius: 16px;
-            font-size: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .landmark-btn:active { background: #4a90d9; color: white; border-color: #4a90d9; }
-        .landmark-btn span { font-size: 14px; }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            padding-top: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        /* Legend */
-        .legend {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 12px;
-            font-size: 12px;
-        }
-        .legend h4 { margin-bottom: 8px; color: #333; }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
-        }
-        .legend-icon {
-            width: 20px;
-            text-align: center;
-        }
 
         /* Ads */
         .ad-container {
@@ -431,15 +291,10 @@
 
         @media (max-width: 600px) {
             .header h1 { font-size: 16px; }
-            .tool-btn { width: 36px; height: 36px; font-size: 14px; }
-            .color-btn { width: 24px; height: 24px; }
         }
 
         @media print {
-            .header, .tabs, .route-panel, .toolbar, .landmarks, .actions,
-            .sketch-actions, .map-container, .ad-container, .footer, .legend { display: none !important; }
-            .sketch-container, .canvas-wrapper { box-shadow: none; padding: 0; }
-            #sketchCanvas, #drawCanvas { border: 1px solid #ccc; }
+            .header, .route-panel, .map-container, .ad-container, .footer { display: none !important; }
         }
     </style>
 </head>
@@ -457,14 +312,7 @@
                 data-ad-slot="XXXXXXXXXX"></ins>
         </div>
 
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('auto')">Auto Generate</button>
-            <button class="tab-btn" onclick="switchTab('manual')">Manual Draw</button>
-        </div>
-
-        <!-- Auto Generate Tab -->
-        <div id="autoTab" class="tab-content active">
+        <!-- Route Generator -->
             <div class="route-panel">
                 <div class="input-group">
                     <label>📍 FROM (Your Current Location)</label>
@@ -508,52 +356,6 @@
                     <div id="turnStepsList"></div>
                 </div>
             </div>
-        </div>
-
-        <!-- Manual Draw Tab -->
-        <div id="manualTab" class="tab-content">
-            <div class="toolbar">
-                <div class="tool-group separator">
-                    <button class="tool-btn active" data-tool="pen">✏️</button>
-                    <button class="tool-btn" data-tool="line">📏</button>
-                    <button class="tool-btn" data-tool="text">🔤</button>
-                    <button class="tool-btn" data-tool="eraser">🧽</button>
-                </div>
-                <div class="tool-group separator">
-                    <button class="color-btn active" style="background:#000" data-color="#000"></button>
-                    <button class="color-btn" style="background:#e74c3c" data-color="#e74c3c"></button>
-                    <button class="color-btn" style="background:#27ae60" data-color="#27ae60"></button>
-                    <button class="color-btn" style="background:#3498db" data-color="#3498db"></button>
-                </div>
-                <div class="tool-group">
-                    <input type="range" id="sizeSlider" min="1" max="10" value="2" style="width:70px;">
-                </div>
-            </div>
-
-            <div class="canvas-wrapper">
-                <canvas id="drawCanvas" width="800" height="450"></canvas>
-                <div class="landmarks">
-                    <button class="landmark-btn" data-emoji="🏠"><span>🏠</span>Home</button>
-                    <button class="landmark-btn" data-emoji="🏦"><span>🏦</span>Bank</button>
-                    <button class="landmark-btn" data-emoji="🏥"><span>🏥</span>Hospital</button>
-                    <button class="landmark-btn" data-emoji="⛪"><span>⛪</span>Temple</button>
-                    <button class="landmark-btn" data-emoji="🕌"><span>🕌</span>Mosque</button>
-                    <button class="landmark-btn" data-emoji="🏫"><span>🏫</span>School</button>
-                    <button class="landmark-btn" data-emoji="🏪"><span>🏪</span>Shop</button>
-                    <button class="landmark-btn" data-emoji="⛽"><span>⛽</span>Petrol</button>
-                    <button class="landmark-btn" data-emoji="🚉"><span>🚉</span>Station</button>
-                    <button class="landmark-btn" data-emoji="🚦"><span>🚦</span>Signal</button>
-                    <button class="landmark-btn" data-emoji="🌳"><span>🌳</span>Park</button>
-                    <button class="landmark-btn" data-emoji="⭐"><span>⭐</span>Mark</button>
-                </div>
-                <div class="actions">
-                    <button class="btn-secondary" onclick="undoDraw()">↩️ Undo</button>
-                    <button class="btn-primary" onclick="saveDrawing()">💾 Save</button>
-                    <button class="btn-secondary" onclick="window.print()">🖨️ Print</button>
-                    <button class="btn-danger" onclick="clearDrawing()">🗑️ Clear</button>
-                </div>
-            </div>
-        </div>
 
         <!-- Bottom Ad -->
         <div class="ad-container">
@@ -566,18 +368,6 @@
     <footer class="footer">
         Address Sketch Tool - Generate route maps for bank forms & documents
     </footer>
-
-    <!-- Text Modal -->
-    <div class="modal-overlay" id="textModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:100;">
-        <div style="background:white;padding:20px;border-radius:12px;width:90%;max-width:300px;">
-            <h3 style="margin-bottom:12px;font-size:16px;">Add Label</h3>
-            <input type="text" id="textInput" placeholder="Enter text..." maxlength="30" style="width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:15px;margin-bottom:12px;">
-            <div style="display:flex;gap:10px;">
-                <button onclick="closeTextModal()" style="flex:1;padding:10px;border:none;background:#e0e0e0;border-radius:8px;cursor:pointer;">Cancel</button>
-                <button onclick="addText()" style="flex:1;padding:10px;border:none;background:#4a90d9;color:white;border-radius:8px;cursor:pointer;">Add</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Map Picker Modal -->
     <div id="mapPickerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;">
@@ -601,21 +391,6 @@
     </div>
 
     <script>
-        // ==================== TAB SWITCHING ====================
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-
-            if (tab === 'auto') {
-                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-                document.getElementById('autoTab').classList.add('active');
-            } else {
-                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
-                document.getElementById('manualTab').classList.add('active');
-                initDrawCanvas();
-            }
-        }
-
         // ==================== AUTO ROUTE GENERATOR ====================
         let map = null;
         let routeData = null;
@@ -759,13 +534,15 @@
                 document.getElementById('locationHint').textContent = '✓ Location selected from map';
                 document.getElementById('locationHint').style.color = '#27ae60';
                 currentLocationCoords = selectedPickerCoords;
+                closeMapPicker();
+                // Auto-focus TO input after FROM is selected
+                setTimeout(() => document.getElementById('toLocation').focus(), 100);
             } else {
                 document.getElementById('toLocation').value = selectedPickerAddress;
                 document.getElementById('toHint').textContent = '✓ Location selected from map';
                 document.getElementById('toHint').style.color = '#27ae60';
+                closeMapPicker();
             }
-
-            closeMapPicker();
         }
 
         function closeMapPicker() {
@@ -807,6 +584,9 @@
                         }
                         btn.disabled = false;
                         btn.textContent = '📍 My Location';
+
+                        // Auto-focus TO input after FROM is set
+                        document.getElementById('toLocation').focus();
                     });
                 },
                 (error) => {
@@ -1419,191 +1199,6 @@
             document.querySelectorAll('.turn-step').forEach(el => el.classList.remove('active'));
             document.querySelector(`.turn-step[data-step="${pointIndex}"]`)?.classList.add('active');
         }
-
-        // ==================== MANUAL DRAWING ====================
-        let drawCanvas, drawCtx;
-        let currentTool = 'pen';
-        let currentColor = '#000';
-        let currentSize = 2;
-        let isDrawing = false;
-        let lastX = 0, lastY = 0;
-        let lineStartX = 0, lineStartY = 0;
-        let drawHistory = [];
-        let pendingLandmark = null;
-        let textPosition = null;
-
-        function initDrawCanvas() {
-            if (drawCanvas) return;
-
-            drawCanvas = document.getElementById('drawCanvas');
-            drawCtx = drawCanvas.getContext('2d');
-
-            drawCtx.fillStyle = '#fff';
-            drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
-            saveDrawState();
-
-            document.querySelectorAll('#manualTab .tool-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('#manualTab .tool-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentTool = btn.dataset.tool;
-                    pendingLandmark = null;
-                });
-            });
-
-            document.querySelectorAll('#manualTab .color-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('#manualTab .color-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentColor = btn.dataset.color;
-                });
-            });
-
-            document.getElementById('sizeSlider').addEventListener('input', e => {
-                currentSize = parseInt(e.target.value);
-            });
-
-            document.querySelectorAll('#manualTab .landmark-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    pendingLandmark = btn.dataset.emoji;
-                });
-            });
-
-            drawCanvas.addEventListener('mousedown', startDraw);
-            drawCanvas.addEventListener('mousemove', draw);
-            drawCanvas.addEventListener('mouseup', endDraw);
-            drawCanvas.addEventListener('mouseleave', endDraw);
-            drawCanvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e); }, { passive: false });
-            drawCanvas.addEventListener('touchmove', e => { e.preventDefault(); draw(e); }, { passive: false });
-            drawCanvas.addEventListener('touchend', e => { e.preventDefault(); endDraw(e); }, { passive: false });
-        }
-
-        function getDrawPos(e) {
-            const rect = drawCanvas.getBoundingClientRect();
-            const scaleX = drawCanvas.width / rect.width;
-            const scaleY = drawCanvas.height / rect.height;
-            let clientX, clientY;
-            if (e.touches && e.touches.length > 0) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-            return {
-                x: (clientX - rect.left) * scaleX,
-                y: (clientY - rect.top) * scaleY
-            };
-        }
-
-        function startDraw(e) {
-            const pos = getDrawPos(e);
-            if (pendingLandmark) {
-                drawCtx.font = '28px Arial';
-                drawCtx.fillText(pendingLandmark, pos.x - 14, pos.y + 10);
-                pendingLandmark = null;
-                saveDrawState();
-                return;
-            }
-            if (currentTool === 'text') {
-                textPosition = pos;
-                document.getElementById('textModal').style.display = 'flex';
-                document.getElementById('textInput').value = '';
-                document.getElementById('textInput').focus();
-                return;
-            }
-            isDrawing = true;
-            lastX = pos.x;
-            lastY = pos.y;
-            lineStartX = pos.x;
-            lineStartY = pos.y;
-        }
-
-        function draw(e) {
-            if (!isDrawing) return;
-            const pos = getDrawPos(e);
-            if (currentTool === 'pen' || currentTool === 'eraser') {
-                drawCtx.strokeStyle = currentTool === 'eraser' ? '#fff' : currentColor;
-                drawCtx.lineWidth = currentTool === 'eraser' ? currentSize * 4 : currentSize;
-                drawCtx.lineCap = 'round';
-                drawCtx.beginPath();
-                drawCtx.moveTo(lastX, lastY);
-                drawCtx.lineTo(pos.x, pos.y);
-                drawCtx.stroke();
-                lastX = pos.x;
-                lastY = pos.y;
-            }
-        }
-
-        function endDraw(e) {
-            if (!isDrawing) return;
-            if (currentTool === 'line') {
-                const pos = getDrawPos(e);
-                drawCtx.strokeStyle = currentColor;
-                drawCtx.lineWidth = currentSize;
-                drawCtx.lineCap = 'round';
-                drawCtx.beginPath();
-                drawCtx.moveTo(lineStartX, lineStartY);
-                drawCtx.lineTo(pos.x, pos.y);
-                drawCtx.stroke();
-            }
-            isDrawing = false;
-            saveDrawState();
-        }
-
-        function saveDrawState() {
-            drawHistory.push(drawCanvas.toDataURL());
-            if (drawHistory.length > 30) drawHistory.shift();
-        }
-
-        function undoDraw() {
-            if (drawHistory.length > 1) {
-                drawHistory.pop();
-                const img = new Image();
-                img.onload = () => {
-                    drawCtx.fillStyle = '#fff';
-                    drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
-                    drawCtx.drawImage(img, 0, 0);
-                };
-                img.src = drawHistory[drawHistory.length - 1];
-            }
-        }
-
-        function clearDrawing() {
-            if (confirm('Clear the entire sketch?')) {
-                drawCtx.fillStyle = '#fff';
-                drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
-                saveDrawState();
-            }
-        }
-
-        function saveDrawing() {
-            const link = document.createElement('a');
-            link.download = 'address-sketch.png';
-            link.href = drawCanvas.toDataURL('image/png');
-            link.click();
-        }
-
-        function addText() {
-            const text = document.getElementById('textInput').value.trim();
-            if (text && textPosition) {
-                drawCtx.font = `${14 + currentSize}px Arial`;
-                drawCtx.fillStyle = currentColor;
-                drawCtx.fillText(text, textPosition.x, textPosition.y);
-                saveDrawState();
-            }
-            closeTextModal();
-        }
-
-        function closeTextModal() {
-            document.getElementById('textModal').style.display = 'none';
-            textPosition = null;
-        }
-
-        document.getElementById('textInput').addEventListener('keydown', e => {
-            if (e.key === 'Enter') addText();
-            if (e.key === 'Escape') closeTextModal();
-        });
 
         // Service Worker
         if ('serviceWorker' in navigator) {
