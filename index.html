@@ -8,67 +8,26 @@
     <meta name="apple-mobile-web-app-title" content="Sketch">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#4a90d9">
-    <meta name="msapplication-TileColor" content="#4a90d9">
 
-    <title>Address Sketch Tool - Draw Location Maps</title>
-    <meta name="description" content="Free PWA tool to draw address sketches and location maps for bank forms. Works offline on mobile, iPad & desktop.">
+    <title>Address Sketch - Auto Route Generator</title>
+    <meta name="description" content="Generate simple address sketches from any location. Enter FROM and TO, get an easy-to-draw route map with landmarks.">
 
-    <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
-
-    <!-- Icons -->
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
-    <link rel="apple-touch-icon" href="icons/icon-180.png">
 
-    <!-- Google AdSense - Replace with your code after approval -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1157507558678597" crossorigin="anonymous"></script>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        html, body {
-            overflow-x: hidden;
-            overscroll-behavior: none;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { overflow-x: hidden; overscroll-behavior: none; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f0f2f5;
             min-height: 100vh;
-            min-height: -webkit-fill-available;
-            touch-action: manipulation;
-        }
-
-        /* PWA Install Banner */
-        .install-banner {
-            display: none;
-            background: linear-gradient(135deg, #4a90d9, #357abd);
-            color: white;
-            padding: 12px 20px;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        .install-banner.show { display: flex; }
-        .install-banner button {
-            background: white;
-            color: #4a90d9;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .install-banner .close {
-            background: transparent;
-            color: white;
-            font-size: 20px;
-            padding: 5px 10px;
         }
 
         .header {
@@ -77,49 +36,180 @@
             padding: 12px 16px;
             padding-top: max(12px, env(safe-area-inset-top));
             text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 50;
         }
         .header h1 { font-size: 18px; font-weight: 600; }
+        .header p { font-size: 12px; opacity: 0.9; margin-top: 4px; }
 
         .main-container {
-            display: flex;
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 12px;
-            gap: 15px;
-        }
-        .content-area {
-            flex: 1;
-            min-width: 0;
         }
 
-        /* Ads */
-        .ad-container {
-            background: #e0e0e0;
-            border-radius: 8px;
+        /* Tab Navigation */
+        .tabs {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-            font-size: 11px;
-            overflow: hidden;
+            background: #fff;
+            border-radius: 12px;
+            padding: 6px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
-        .sidebar-ad {
-            width: 160px;
-            min-height: 600px;
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .banner-ad {
-            height: 60px;
+        .tab-btn.active {
+            background: #4a90d9;
+            color: white;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Route Generator */
+        .route-panel {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             margin-bottom: 12px;
         }
-        .bottom-ad {
-            height: 100px;
-            margin-top: 12px;
+        .input-group {
+            margin-bottom: 12px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus { border-color: #4a90d9; }
+        .input-hint {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .input-with-btn {
+            display: flex;
+            gap: 8px;
+        }
+        .input-with-btn input {
+            flex: 1;
+        }
+        .location-btn {
+            padding: 12px 14px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .location-btn:active { transform: scale(0.95); }
+        .location-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .generate-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #4a90d9, #357abd);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        .generate-btn:active { transform: scale(0.98); }
+        .generate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .status-msg {
+            text-align: center;
+            padding: 12px;
+            font-size: 14px;
+            color: #666;
+        }
+        .status-msg.error { color: #e74c3c; }
+
+        /* Map Preview */
+        .map-container {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 12px;
+        }
+        #map {
+            height: 250px;
+            width: 100%;
         }
 
-        /* Toolbar */
+        /* Sketch Output */
+        .sketch-container {
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .sketch-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .sketch-header h3 {
+            font-size: 14px;
+            color: #333;
+        }
+        #sketchCanvas {
+            width: 100%;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .sketch-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .sketch-actions button {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-primary { background: #4a90d9; color: white; }
+        .btn-secondary { background: #e0e0e0; color: #333; }
+        .btn-danger { background: #e74c3c; color: white; }
+
+        /* Manual Draw Tab */
         .toolbar {
             background: #fff;
             padding: 10px;
@@ -141,87 +231,48 @@
             border-right: 1px solid #eee;
             margin-right: 2px;
         }
-
         .tool-btn {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             border: 2px solid #e0e0e0;
             background: #fff;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.15s ease;
-            -webkit-user-select: none;
-            user-select: none;
+            transition: all 0.15s;
         }
         .tool-btn:active { transform: scale(0.95); }
         .tool-btn.active {
             background: #4a90d9;
             border-color: #4a90d9;
             color: white;
-            box-shadow: 0 2px 8px rgba(74,144,217,0.4);
         }
-
         .color-btn {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             padding: 0;
             border-radius: 50%;
             border: 3px solid transparent;
         }
-        .color-btn.active {
-            border-color: #333;
-            transform: scale(1.1);
-        }
+        .color-btn.active { border-color: #333; transform: scale(1.1); }
 
-        .size-slider {
-            width: 80px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-        }
-        .size-slider input {
-            width: 100%;
-            height: 6px;
-            -webkit-appearance: none;
-            background: #e0e0e0;
-            border-radius: 3px;
-            outline: none;
-        }
-        .size-slider input::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 22px;
-            height: 22px;
-            background: #4a90d9;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        /* Canvas */
         .canvas-wrapper {
             background: #fff;
             border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             padding: 8px;
-            overflow: hidden;
         }
-
-        #canvas {
+        #drawCanvas {
             display: block;
             width: 100%;
-            height: auto;
             border-radius: 8px;
             background: #fff;
             touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
         }
 
-        /* Landmarks */
         .landmarks {
             display: flex;
             flex-wrap: wrap;
@@ -231,27 +282,19 @@
             margin-top: 10px;
         }
         .landmark-btn {
-            padding: 8px 12px;
+            padding: 6px 10px;
             border: 1px solid #e0e0e0;
             background: #fafafa;
-            border-radius: 20px;
-            font-size: 13px;
+            border-radius: 16px;
+            font-size: 12px;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 4px;
-            transition: all 0.15s;
-            -webkit-user-select: none;
-            user-select: none;
         }
-        .landmark-btn:active {
-            background: #4a90d9;
-            color: white;
-            border-color: #4a90d9;
-        }
-        .landmark-btn span { font-size: 16px; }
+        .landmark-btn:active { background: #4a90d9; color: white; border-color: #4a90d9; }
+        .landmark-btn span { font-size: 14px; }
 
-        /* Actions */
         .actions {
             display: flex;
             gap: 8px;
@@ -259,93 +302,40 @@
             flex-wrap: wrap;
             justify-content: center;
         }
-        .action-btn {
-            padding: 12px 20px;
-            border: none;
-            background: #4a90d9;
-            color: white;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.15s;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        .action-btn:active { transform: scale(0.97); opacity: 0.9; }
-        .action-btn.danger { background: #e74c3c; }
-        .action-btn.secondary { background: #6c757d; }
 
-        /* Text Input Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            padding: 20px;
-        }
-        .modal-overlay.show { display: flex; }
-        .modal-box {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 320px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        .modal-box h3 {
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-        .modal-box input {
-            width: 100%;
-            padding: 14px;
-            font-size: 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            outline: none;
-        }
-        .modal-box input:focus { border-color: #4a90d9; }
-        .modal-btns {
-            display: flex;
-            gap: 10px;
-        }
-        .modal-btns button {
-            flex: 1;
+        /* Legend */
+        .legend {
+            background: #f8f9fa;
+            border-radius: 8px;
             padding: 12px;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
+            margin-top: 12px;
+            font-size: 12px;
         }
-        .modal-btns .cancel { background: #e0e0e0; }
-        .modal-btns .confirm { background: #4a90d9; color: white; }
-
-        /* Offline indicator */
-        .offline-badge {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-size: 13px;
-            z-index: 100;
+        .legend h4 { margin-bottom: 8px; color: #333; }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
         }
-        .offline-badge.show { display: block; }
+        .legend-icon {
+            width: 20px;
+            text-align: center;
+        }
 
-        /* Footer */
+        /* Ads */
+        .ad-container {
+            background: #e0e0e0;
+            border-radius: 8px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 11px;
+            margin-bottom: 12px;
+        }
+
         .footer {
             text-align: center;
             padding: 15px;
@@ -353,94 +343,128 @@
             font-size: 11px;
         }
 
-        /* Responsive */
-        @media (max-width: 900px) {
-            .sidebar-ad { display: none; }
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #4a90d9;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 600px) {
             .header h1 { font-size: 16px; }
-            .main-container { padding: 8px; }
-            .toolbar { padding: 8px; gap: 6px; }
-            .tool-btn { width: 40px; height: 40px; font-size: 16px; }
-            .color-btn { width: 28px; height: 28px; }
-            .size-slider { width: 60px; }
-            .landmark-btn { padding: 6px 10px; font-size: 12px; }
-            .landmark-btn span { font-size: 14px; }
-            .action-btn { padding: 10px 14px; font-size: 13px; }
-            .actions { gap: 6px; }
+            .tool-btn { width: 36px; height: 36px; font-size: 14px; }
+            .color-btn { width: 24px; height: 24px; }
         }
 
-        /* iPad Landscape */
-        @media (min-width: 768px) and (max-width: 1024px) {
-            .canvas-wrapper { padding: 12px; }
-            .tool-btn { width: 48px; height: 48px; }
-        }
-
-        /* Print */
         @media print {
-            .header, .toolbar, .actions, .landmarks, .ad-container,
-            .footer, .install-banner, .offline-badge { display: none !important; }
-            .main-container { padding: 0; max-width: none; }
-            .canvas-wrapper { box-shadow: none; padding: 0; border-radius: 0; }
-            #canvas { border: 1px solid #ccc; }
+            .header, .tabs, .route-panel, .toolbar, .landmarks, .actions,
+            .sketch-actions, .map-container, .ad-container, .footer, .legend { display: none !important; }
+            .sketch-container, .canvas-wrapper { box-shadow: none; padding: 0; }
+            #sketchCanvas, #drawCanvas { border: 1px solid #ccc; }
         }
     </style>
 </head>
 <body>
-    <!-- Install Banner -->
-    <div class="install-banner" id="installBanner">
-        <span>📱 Install app for offline use</span>
-        <div>
-            <button id="installBtn">Install</button>
-            <button class="close" id="closeBanner">×</button>
-        </div>
-    </div>
-
     <header class="header">
         <h1>Address Sketch Tool</h1>
+        <p>Generate route sketches for bank forms</p>
     </header>
 
     <div class="main-container">
-        <!-- Left Ad -->
-        <div class="ad-container sidebar-ad">
-            <ins class="adsbygoogle" style="display:inline-block;width:160px;height:600px"
-                data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX"></ins>
+        <!-- Top Ad -->
+        <div class="ad-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-format="auto"
+                data-full-width-responsive="true" data-ad-client="ca-pub-1157507558678597"
+                data-ad-slot="XXXXXXXXXX"></ins>
         </div>
 
-        <div class="content-area">
-            <!-- Top Ad -->
-            <div class="ad-container banner-ad">
-                <ins class="adsbygoogle" style="display:block" data-ad-format="auto"
-                    data-full-width-responsive="true" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-                    data-ad-slot="XXXXXXXXXX"></ins>
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('auto')">Auto Generate</button>
+            <button class="tab-btn" onclick="switchTab('manual')">Manual Draw</button>
+        </div>
+
+        <!-- Auto Generate Tab -->
+        <div id="autoTab" class="tab-content active">
+            <div class="route-panel">
+                <div class="input-group">
+                    <label>📍 FROM (Your Current Location)</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="fromLocation" placeholder="Click 'Use My Location' or enter address">
+                        <button class="location-btn" id="getLocationBtn" onclick="getCurrentLocation()">📍 Use My Location</button>
+                    </div>
+                    <div class="input-hint" id="locationHint">We'll detect your current location automatically</div>
+                </div>
+                <div class="input-group">
+                    <label>🏠 TO (Your Home Address)</label>
+                    <input type="text" id="toLocation" placeholder="e.g., 123, 4th Cross, Jayanagar, Bangalore">
+                    <div class="input-hint">Enter your home/destination address</div>
+                </div>
+                <button class="generate-btn" id="generateBtn" onclick="generateRoute()">
+                    Generate Route Sketch
+                </button>
+                <div class="status-msg" id="statusMsg"></div>
             </div>
 
-            <!-- Toolbar -->
+            <!-- Map Preview -->
+            <div class="map-container" id="mapContainer" style="display:none;">
+                <div id="map"></div>
+            </div>
+
+            <!-- Sketch Output -->
+            <div class="sketch-container" id="sketchContainer" style="display:none;">
+                <div class="sketch-header">
+                    <h3>📝 Simplified Sketch (Easy to Draw on Paper)</h3>
+                </div>
+                <canvas id="sketchCanvas" width="800" height="500"></canvas>
+                <div class="sketch-actions">
+                    <button class="btn-primary" onclick="saveSketch()">💾 Save Image</button>
+                    <button class="btn-secondary" onclick="window.print()">🖨️ Print</button>
+                    <button class="btn-secondary" onclick="regenerate()">🔄 Regenerate</button>
+                </div>
+                <div class="legend">
+                    <h4>Legend (for drawing on paper):</h4>
+                    <div class="legend-item"><span class="legend-icon">━━</span> Main Road</div>
+                    <div class="legend-item"><span class="legend-icon">●</span> Turn Point</div>
+                    <div class="legend-item"><span class="legend-icon">🏠</span> Your Home</div>
+                    <div class="legend-item"><span class="legend-icon">🏦</span> Starting Point (Bank)</div>
+                    <div class="legend-item"><span class="legend-icon">⭐</span> Landmark</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Draw Tab -->
+        <div id="manualTab" class="tab-content">
             <div class="toolbar">
                 <div class="tool-group separator">
-                    <button class="tool-btn active" id="penTool" data-tool="pen" aria-label="Pen">✏️</button>
-                    <button class="tool-btn" id="lineTool" data-tool="line" aria-label="Line">📏</button>
-                    <button class="tool-btn" id="textTool" data-tool="text" aria-label="Text">🔤</button>
-                    <button class="tool-btn" id="eraserTool" data-tool="eraser" aria-label="Eraser">🧽</button>
+                    <button class="tool-btn active" data-tool="pen">✏️</button>
+                    <button class="tool-btn" data-tool="line">📏</button>
+                    <button class="tool-btn" data-tool="text">🔤</button>
+                    <button class="tool-btn" data-tool="eraser">🧽</button>
                 </div>
                 <div class="tool-group separator">
                     <button class="color-btn active" style="background:#000" data-color="#000"></button>
                     <button class="color-btn" style="background:#e74c3c" data-color="#e74c3c"></button>
                     <button class="color-btn" style="background:#27ae60" data-color="#27ae60"></button>
                     <button class="color-btn" style="background:#3498db" data-color="#3498db"></button>
-                    <button class="color-btn" style="background:#f39c12" data-color="#f39c12"></button>
                 </div>
-                <div class="tool-group size-slider">
-                    <input type="range" id="sizeSlider" min="1" max="12" value="3" aria-label="Brush size">
+                <div class="tool-group">
+                    <input type="range" id="sizeSlider" min="1" max="10" value="2" style="width:70px;">
                 </div>
             </div>
 
-            <!-- Canvas -->
             <div class="canvas-wrapper">
-                <canvas id="canvas" width="1200" height="700"></canvas>
-
-                <!-- Landmarks -->
+                <canvas id="drawCanvas" width="800" height="450"></canvas>
                 <div class="landmarks">
                     <button class="landmark-btn" data-emoji="🏠"><span>🏠</span>Home</button>
                     <button class="landmark-btn" data-emoji="🏦"><span>🏦</span>Bank</button>
@@ -453,273 +477,629 @@
                     <button class="landmark-btn" data-emoji="🚉"><span>🚉</span>Station</button>
                     <button class="landmark-btn" data-emoji="🚦"><span>🚦</span>Signal</button>
                     <button class="landmark-btn" data-emoji="🌳"><span>🌳</span>Park</button>
-                    <button class="landmark-btn" data-emoji="🏛️"><span>🏛️</span>Office</button>
                     <button class="landmark-btn" data-emoji="⭐"><span>⭐</span>Mark</button>
                 </div>
-
-                <!-- Actions -->
                 <div class="actions">
-                    <button class="action-btn secondary" id="undoBtn">↩️ Undo</button>
-                    <button class="action-btn" id="saveBtn">💾 Save</button>
-                    <button class="action-btn" id="printBtn">🖨️ Print</button>
-                    <button class="action-btn danger" id="clearBtn">🗑️ Clear</button>
+                    <button class="btn-secondary" onclick="undoDraw()">↩️ Undo</button>
+                    <button class="btn-primary" onclick="saveDrawing()">💾 Save</button>
+                    <button class="btn-secondary" onclick="window.print()">🖨️ Print</button>
+                    <button class="btn-danger" onclick="clearDrawing()">🗑️ Clear</button>
                 </div>
-            </div>
-
-            <!-- Bottom Ad -->
-            <div class="ad-container bottom-ad">
-                <ins class="adsbygoogle" style="display:block" data-ad-format="auto"
-                    data-full-width-responsive="true" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-                    data-ad-slot="XXXXXXXXXX"></ins>
             </div>
         </div>
 
-        <!-- Right Ad -->
-        <div class="ad-container sidebar-ad">
-            <ins class="adsbygoogle" style="display:inline-block;width:160px;height:600px"
-                data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX"></ins>
+        <!-- Bottom Ad -->
+        <div class="ad-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-format="auto"
+                data-full-width-responsive="true" data-ad-client="ca-pub-1157507558678597"
+                data-ad-slot="XXXXXXXXXX"></ins>
         </div>
     </div>
 
     <footer class="footer">
-        Draw location maps for bank forms & documents • Works offline
+        Address Sketch Tool - Generate route maps for bank forms & documents
     </footer>
 
     <!-- Text Modal -->
-    <div class="modal-overlay" id="textModal">
-        <div class="modal-box">
-            <h3>Add Label</h3>
-            <input type="text" id="textInput" placeholder="Enter text..." maxlength="30" autocomplete="off">
-            <div class="modal-btns">
-                <button class="cancel" id="cancelText">Cancel</button>
-                <button class="confirm" id="confirmText">Add</button>
+    <div class="modal-overlay" id="textModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:100;">
+        <div style="background:white;padding:20px;border-radius:12px;width:90%;max-width:300px;">
+            <h3 style="margin-bottom:12px;font-size:16px;">Add Label</h3>
+            <input type="text" id="textInput" placeholder="Enter text..." maxlength="30" style="width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:15px;margin-bottom:12px;">
+            <div style="display:flex;gap:10px;">
+                <button onclick="closeTextModal()" style="flex:1;padding:10px;border:none;background:#e0e0e0;border-radius:8px;cursor:pointer;">Cancel</button>
+                <button onclick="addText()" style="flex:1;padding:10px;border:none;background:#4a90d9;color:white;border-radius:8px;cursor:pointer;">Add</button>
             </div>
         </div>
     </div>
 
-    <!-- Offline Badge -->
-    <div class="offline-badge" id="offlineBadge">📴 You're offline - changes saved locally</div>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // ===== Canvas Setup with High DPI Support =====
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d', {
-            alpha: false,
-            desynchronized: true  // Better performance on supported devices
-        });
+        // ==================== TAB SWITCHING ====================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
 
-        // High DPI canvas setup
-        function setupCanvas() {
-            const rect = canvas.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-
-            ctx.scale(dpr, dpr);
-            canvas.style.width = rect.width + 'px';
-            canvas.style.height = rect.height + 'px';
-
-            // Set white background
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(0, 0, rect.width, rect.height);
-
-            // Restore from saved state if exists
-            restoreCanvas();
+            if (tab === 'auto') {
+                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+                document.getElementById('autoTab').classList.add('active');
+            } else {
+                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+                document.getElementById('manualTab').classList.add('active');
+                initDrawCanvas();
+            }
         }
 
-        // ===== State =====
-        let currentTool = 'pen';
-        let currentColor = '#000';
-        let currentSize = 3;
-        let isDrawing = false;
-        let lastX = 0, lastY = 0;
-        let lineStartX = 0, lineStartY = 0;
-        let history = [];
-        let historyIndex = -1;
-        let pendingLandmark = null;
-        let textPosition = null;
-        let points = []; // For smooth drawing
+        // ==================== AUTO ROUTE GENERATOR ====================
+        let map = null;
+        let routeData = null;
+        let landmarks = [];
+        let currentLocationCoords = null;
 
-        // ===== History Management =====
-        function saveState() {
-            // Remove any redo states
-            history = history.slice(0, historyIndex + 1);
-            history.push(canvas.toDataURL('image/png'));
-            historyIndex++;
+        // Get current location on page load
+        window.addEventListener('load', () => {
+            getCurrentLocation();
+        });
 
-            // Limit history
-            if (history.length > 30) {
-                history.shift();
-                historyIndex--;
+        async function getCurrentLocation() {
+            const btn = document.getElementById('getLocationBtn');
+            const input = document.getElementById('fromLocation');
+            const hint = document.getElementById('locationHint');
+
+            if (!navigator.geolocation) {
+                hint.textContent = 'Geolocation not supported. Enter address manually.';
+                hint.style.color = '#e74c3c';
+                return;
             }
 
-            // Auto-save to localStorage
+            btn.disabled = true;
+            btn.textContent = '📍 Locating...';
+            hint.textContent = 'Getting your location...';
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    currentLocationCoords = { lat, lng };
+
+                    // Reverse geocode to get address
+                    try {
+                        const response = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+                            { headers: { 'User-Agent': 'AddressSketchTool/1.0' } }
+                        );
+                        const data = await response.json();
+
+                        if (data && data.display_name) {
+                            input.value = data.display_name;
+                            hint.textContent = '✓ Location detected! You can edit if needed.';
+                            hint.style.color = '#27ae60';
+                        } else {
+                            input.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                            hint.textContent = '✓ Coordinates detected';
+                            hint.style.color = '#27ae60';
+                        }
+                    } catch (e) {
+                        input.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                        hint.textContent = '✓ Coordinates detected';
+                        hint.style.color = '#27ae60';
+                    }
+
+                    btn.disabled = false;
+                    btn.textContent = '📍 Update Location';
+                },
+                (error) => {
+                    btn.disabled = false;
+                    btn.textContent = '📍 Try Again';
+                    hint.style.color = '#e74c3c';
+
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            hint.textContent = 'Location access denied. Enter address manually.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            hint.textContent = 'Location unavailable. Enter address manually.';
+                            break;
+                        case error.TIMEOUT:
+                            hint.textContent = 'Location timeout. Try again or enter manually.';
+                            break;
+                        default:
+                            hint.textContent = 'Could not get location. Enter address manually.';
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            );
+        }
+
+        async function generateRoute() {
+            const from = document.getElementById('fromLocation').value.trim();
+            const to = document.getElementById('toLocation').value.trim();
+            const statusMsg = document.getElementById('statusMsg');
+            const generateBtn = document.getElementById('generateBtn');
+
+            if (!from || !to) {
+                statusMsg.textContent = 'Please enter both FROM and TO locations';
+                statusMsg.className = 'status-msg error';
+                return;
+            }
+
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<span class="loading"><span class="spinner"></span> Generating...</span>';
+            statusMsg.textContent = '';
+
             try {
-                localStorage.setItem('sketch_data', history[historyIndex]);
-            } catch(e) {}
-        }
+                // Step 1: Geocode both locations
+                statusMsg.textContent = 'Finding locations...';
+                const [fromCoords, toCoords] = await Promise.all([
+                    geocode(from),
+                    geocode(to)
+                ]);
 
-        function undo() {
-            if (historyIndex > 0) {
-                historyIndex--;
-                loadState(history[historyIndex]);
+                if (!fromCoords || !toCoords) {
+                    throw new Error('Could not find one or both locations. Try more specific addresses.');
+                }
+
+                // Step 2: Get route
+                statusMsg.textContent = 'Calculating route...';
+                const route = await getRoute(fromCoords, toCoords);
+
+                if (!route) {
+                    throw new Error('Could not find a route between these locations.');
+                }
+
+                // Step 3: Get landmarks along route
+                statusMsg.textContent = 'Finding landmarks...';
+                landmarks = await getLandmarks(route.bbox);
+
+                // Step 4: Show map
+                showMap(fromCoords, toCoords, route);
+
+                // Step 5: Generate simplified sketch
+                statusMsg.textContent = 'Drawing sketch...';
+                await generateSketch(fromCoords, toCoords, route, landmarks, from, to);
+
+                statusMsg.textContent = 'Route generated! Scroll down to see the sketch.';
+                statusMsg.className = 'status-msg';
+
+            } catch (error) {
+                statusMsg.textContent = error.message;
+                statusMsg.className = 'status-msg error';
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = 'Generate Route Sketch';
             }
         }
 
-        function loadState(dataUrl) {
-            const img = new Image();
-            img.onload = () => {
-                const rect = canvas.getBoundingClientRect();
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(0, 0, rect.width, rect.height);
-                ctx.drawImage(img, 0, 0, rect.width, rect.height);
-            };
-            img.src = dataUrl;
-        }
-
-        function restoreCanvas() {
-            const saved = localStorage.getItem('sketch_data');
-            if (saved) {
-                loadState(saved);
-                history = [saved];
-                historyIndex = 0;
-            } else {
-                saveState();
-            }
-        }
-
-        // ===== Tool Selection =====
-        document.querySelectorAll('.tool-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentTool = btn.dataset.tool;
-                pendingLandmark = null;
+        async function geocode(address) {
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
+            const response = await fetch(url, {
+                headers: { 'User-Agent': 'AddressSketchTool/1.0' }
             });
-        });
+            const data = await response.json();
 
-        // ===== Color Selection =====
-        document.querySelectorAll('.color-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentColor = btn.dataset.color;
-            });
-        });
-
-        // ===== Size Slider =====
-        document.getElementById('sizeSlider').addEventListener('input', (e) => {
-            currentSize = parseInt(e.target.value);
-        });
-
-        // ===== Get Position (Touch & Mouse) =====
-        function getPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-
-            let clientX, clientY;
-            if (e.touches && e.touches.length > 0) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else if (e.changedTouches && e.changedTouches.length > 0) {
-                clientX = e.changedTouches[0].clientX;
-                clientY = e.changedTouches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
+            if (data && data.length > 0) {
+                return {
+                    lat: parseFloat(data[0].lat),
+                    lng: parseFloat(data[0].lon),
+                    name: data[0].display_name
+                };
             }
-
-            return {
-                x: clientX - rect.left,
-                y: clientY - rect.top
-            };
+            return null;
         }
 
-        // ===== Smooth Line Drawing (Quadratic Bezier) =====
-        function drawSmoothLine() {
-            if (points.length < 2) return;
+        async function getRoute(from, to) {
+            const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson&steps=true`;
+            const response = await fetch(url);
+            const data = await response.json();
 
-            ctx.strokeStyle = currentTool === 'eraser' ? '#fff' : currentColor;
-            ctx.lineWidth = currentTool === 'eraser' ? currentSize * 4 : currentSize;
+            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                const route = data.routes[0];
+                const coords = route.geometry.coordinates;
+
+                // Calculate bounding box
+                let minLat = Infinity, maxLat = -Infinity;
+                let minLng = Infinity, maxLng = -Infinity;
+
+                coords.forEach(c => {
+                    minLng = Math.min(minLng, c[0]);
+                    maxLng = Math.max(maxLng, c[0]);
+                    minLat = Math.min(minLat, c[1]);
+                    maxLat = Math.max(maxLat, c[1]);
+                });
+
+                return {
+                    coordinates: coords.map(c => ({ lat: c[1], lng: c[0] })),
+                    steps: route.legs[0].steps,
+                    distance: route.distance,
+                    duration: route.duration,
+                    bbox: { minLat, maxLat, minLng, maxLng }
+                };
+            }
+            return null;
+        }
+
+        async function getLandmarks(bbox) {
+            const padding = 0.002;
+            const query = `
+                [out:json][timeout:25];
+                (
+                    node["amenity"~"hospital|bank|fuel|school|place_of_worship|police"](${bbox.minLat - padding},${bbox.minLng - padding},${bbox.maxLat + padding},${bbox.maxLng + padding});
+                    node["shop"~"supermarket|mall"](${bbox.minLat - padding},${bbox.minLng - padding},${bbox.maxLat + padding},${bbox.maxLng + padding});
+                    node["railway"="station"](${bbox.minLat - padding},${bbox.minLng - padding},${bbox.maxLat + padding},${bbox.maxLng + padding});
+                    node["highway"="traffic_signals"](${bbox.minLat - padding},${bbox.minLng - padding},${bbox.maxLat + padding},${bbox.maxLng + padding});
+                );
+                out body 30;
+            `;
+
+            try {
+                const response = await fetch('https://overpass-api.de/api/interpreter', {
+                    method: 'POST',
+                    body: query
+                });
+                const data = await response.json();
+
+                return data.elements.map(el => ({
+                    lat: el.lat,
+                    lng: el.lon,
+                    type: el.tags.amenity || el.tags.shop || el.tags.railway || el.tags.highway,
+                    name: el.tags.name || ''
+                })).slice(0, 12);
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function showMap(from, to, route) {
+            const mapContainer = document.getElementById('mapContainer');
+            mapContainer.style.display = 'block';
+
+            if (!map) {
+                map = L.map('map');
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
+            }
+
+            // Clear previous layers
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            // Add route
+            const routeLine = L.polyline(route.coordinates.map(c => [c.lat, c.lng]), {
+                color: '#4a90d9',
+                weight: 4
+            }).addTo(map);
+
+            // Add markers
+            L.marker([from.lat, from.lng]).addTo(map).bindPopup('Start');
+            L.marker([to.lat, to.lng]).addTo(map).bindPopup('Home');
+
+            // Fit bounds
+            map.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
+        }
+
+        async function generateSketch(from, to, route, landmarks, fromLabel, toLabel) {
+            const container = document.getElementById('sketchContainer');
+            container.style.display = 'block';
+
+            const canvas = document.getElementById('sketchCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const padding = 70;
+            const width = canvas.width - padding * 2;
+            const height = canvas.height - padding * 2;
+
+            // Calculate bounds
+            const bbox = route.bbox;
+            const scaleX = width / (bbox.maxLng - bbox.minLng || 0.001);
+            const scaleY = height / (bbox.maxLat - bbox.minLat || 0.001);
+            const scale = Math.min(scaleX, scaleY) * 0.85;
+
+            const centerLng = (bbox.minLng + bbox.maxLng) / 2;
+            const centerLat = (bbox.minLat + bbox.maxLat) / 2;
+
+            function toCanvas(lat, lng) {
+                return {
+                    x: padding + width / 2 + (lng - centerLng) * scale,
+                    y: padding + height / 2 - (lat - centerLat) * scale
+                };
+            }
+
+            // Simplify route
+            const simplified = simplifyRoute(route.coordinates, 0.00008);
+
+            // Draw route
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
             ctx.beginPath();
-            ctx.moveTo(points[0].x, points[0].y);
-
-            if (points.length === 2) {
-                ctx.lineTo(points[1].x, points[1].y);
-            } else {
-                for (let i = 1; i < points.length - 1; i++) {
-                    const midX = (points[i].x + points[i + 1].x) / 2;
-                    const midY = (points[i].y + points[i + 1].y) / 2;
-                    ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
-                }
-                const last = points.length - 1;
-                ctx.lineTo(points[last].x, points[last].y);
-            }
-
+            simplified.forEach((point, i) => {
+                const p = toCanvas(point.lat, point.lng);
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            });
             ctx.stroke();
+
+            // Draw turn points
+            ctx.fillStyle = '#666';
+            const turns = findTurns(simplified);
+            turns.forEach(turn => {
+                const p = toCanvas(turn.lat, turn.lng);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw landmarks
+            const icons = {
+                'hospital': '🏥',
+                'bank': '🏦',
+                'fuel': '⛽',
+                'school': '🏫',
+                'place_of_worship': '⛪',
+                'police': '🚔',
+                'supermarket': '🏪',
+                'mall': '🏬',
+                'station': '🚉',
+                'traffic_signals': '🚦'
+            };
+
+            ctx.font = '22px Arial';
+            landmarks.forEach(lm => {
+                const p = toCanvas(lm.lat, lm.lng);
+                const icon = icons[lm.type] || '⭐';
+                ctx.fillText(icon, p.x - 11, p.y + 8);
+
+                if (lm.name) {
+                    ctx.font = '9px Arial';
+                    ctx.fillStyle = '#555';
+                    const shortName = lm.name.length > 12 ? lm.name.substring(0, 12) + '..' : lm.name;
+                    ctx.fillText(shortName, p.x - 11, p.y + 22);
+                    ctx.font = '22px Arial';
+                }
+            });
+
+            // Draw start and end markers
+            const startP = toCanvas(from.lat, from.lng);
+            const endP = toCanvas(to.lat, to.lng);
+
+            // Start marker
+            ctx.font = '30px Arial';
+            ctx.fillText('🏦', startP.x - 15, startP.y + 10);
+            ctx.font = 'bold 11px Arial';
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillText('START', startP.x - 20, startP.y + 32);
+
+            // End marker
+            ctx.font = '30px Arial';
+            ctx.fillStyle = '#000';
+            ctx.fillText('🏠', endP.x - 15, endP.y + 10);
+            ctx.font = 'bold 11px Arial';
+            ctx.fillStyle = '#27ae60';
+            ctx.fillText('HOME', endP.x - 18, endP.y + 32);
+
+            // Title
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px Arial';
+            const shortFrom = fromLabel.length > 35 ? fromLabel.substring(0, 35) + '...' : fromLabel;
+            const shortTo = toLabel.length > 35 ? toLabel.substring(0, 35) + '...' : toLabel;
+            ctx.fillText(`Route: ${shortFrom}`, 15, 22);
+            ctx.fillText(`To: ${shortTo}`, 15, 40);
+
+            // Distance
+            const distKm = (route.distance / 1000).toFixed(1);
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#666';
+            ctx.fillText(`Distance: ~${distKm} km`, canvas.width - 120, 25);
+
+            // Draw North arrow
+            ctx.fillStyle = '#999';
+            ctx.font = '14px Arial';
+            ctx.fillText('N', canvas.width - 30, 60);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width - 25, 65);
+            ctx.lineTo(canvas.width - 25, 85);
+            ctx.lineTo(canvas.width - 28, 78);
+            ctx.moveTo(canvas.width - 25, 85);
+            ctx.lineTo(canvas.width - 22, 78);
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Store for regeneration
+            routeData = { from, to, route, landmarks, fromLabel, toLabel };
+
+            // Scroll to sketch
+            container.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // ===== Drawing Events =====
-        function startDraw(e) {
-            e.preventDefault();
-            const pos = getPos(e);
+        function simplifyRoute(coords, tolerance) {
+            if (coords.length < 3) return coords;
 
-            // Place landmark
-            if (pendingLandmark) {
-                ctx.font = '32px Arial';
-                ctx.fillStyle = '#000';
-                ctx.fillText(pendingLandmark, pos.x - 16, pos.y + 10);
-                pendingLandmark = null;
-                saveState();
-                return;
+            function perpendicularDistance(point, lineStart, lineEnd) {
+                const dx = lineEnd.lng - lineStart.lng;
+                const dy = lineEnd.lat - lineStart.lat;
+                if (dx === 0 && dy === 0) {
+                    return Math.sqrt(Math.pow(point.lng - lineStart.lng, 2) + Math.pow(point.lat - lineStart.lat, 2));
+                }
+                const t = ((point.lng - lineStart.lng) * dx + (point.lat - lineStart.lat) * dy) / (dx * dx + dy * dy);
+                const nearestLng = lineStart.lng + t * dx;
+                const nearestLat = lineStart.lat + t * dy;
+                return Math.sqrt(Math.pow(point.lng - nearestLng, 2) + Math.pow(point.lat - nearestLat, 2));
             }
 
-            // Text tool
+            function simplify(points, start, end, tolerance, result) {
+                let maxDist = 0;
+                let maxIndex = 0;
+                for (let i = start + 1; i < end; i++) {
+                    const dist = perpendicularDistance(points[i], points[start], points[end]);
+                    if (dist > maxDist) {
+                        maxDist = dist;
+                        maxIndex = i;
+                    }
+                }
+                if (maxDist > tolerance) {
+                    simplify(points, start, maxIndex, tolerance, result);
+                    result.push(points[maxIndex]);
+                    simplify(points, maxIndex, end, tolerance, result);
+                }
+            }
+
+            const result = [coords[0]];
+            simplify(coords, 0, coords.length - 1, tolerance, result);
+            result.push(coords[coords.length - 1]);
+            return result;
+        }
+
+        function findTurns(coords) {
+            const turns = [];
+            for (let i = 1; i < coords.length - 1; i++) {
+                const prev = coords[i - 1];
+                const curr = coords[i];
+                const next = coords[i + 1];
+                const angle1 = Math.atan2(curr.lat - prev.lat, curr.lng - prev.lng);
+                const angle2 = Math.atan2(next.lat - curr.lat, next.lng - curr.lng);
+                let diff = Math.abs(angle1 - angle2);
+                if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                if (diff > 0.4) turns.push(curr);
+            }
+            return turns;
+        }
+
+        function regenerate() {
+            if (routeData) {
+                generateSketch(routeData.from, routeData.to, routeData.route, routeData.landmarks, routeData.fromLabel, routeData.toLabel);
+            }
+        }
+
+        function saveSketch() {
+            const canvas = document.getElementById('sketchCanvas');
+            const link = document.createElement('a');
+            link.download = 'address-route-sketch.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // ==================== MANUAL DRAWING ====================
+        let drawCanvas, drawCtx;
+        let currentTool = 'pen';
+        let currentColor = '#000';
+        let currentSize = 2;
+        let isDrawing = false;
+        let lastX = 0, lastY = 0;
+        let lineStartX = 0, lineStartY = 0;
+        let drawHistory = [];
+        let pendingLandmark = null;
+        let textPosition = null;
+
+        function initDrawCanvas() {
+            if (drawCanvas) return;
+
+            drawCanvas = document.getElementById('drawCanvas');
+            drawCtx = drawCanvas.getContext('2d');
+
+            drawCtx.fillStyle = '#fff';
+            drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+            saveDrawState();
+
+            document.querySelectorAll('#manualTab .tool-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#manualTab .tool-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentTool = btn.dataset.tool;
+                    pendingLandmark = null;
+                });
+            });
+
+            document.querySelectorAll('#manualTab .color-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#manualTab .color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentColor = btn.dataset.color;
+                });
+            });
+
+            document.getElementById('sizeSlider').addEventListener('input', e => {
+                currentSize = parseInt(e.target.value);
+            });
+
+            document.querySelectorAll('#manualTab .landmark-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    pendingLandmark = btn.dataset.emoji;
+                });
+            });
+
+            drawCanvas.addEventListener('mousedown', startDraw);
+            drawCanvas.addEventListener('mousemove', draw);
+            drawCanvas.addEventListener('mouseup', endDraw);
+            drawCanvas.addEventListener('mouseleave', endDraw);
+            drawCanvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e); }, { passive: false });
+            drawCanvas.addEventListener('touchmove', e => { e.preventDefault(); draw(e); }, { passive: false });
+            drawCanvas.addEventListener('touchend', e => { e.preventDefault(); endDraw(e); }, { passive: false });
+        }
+
+        function getDrawPos(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            const scaleX = drawCanvas.width / rect.width;
+            const scaleY = drawCanvas.height / rect.height;
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function startDraw(e) {
+            const pos = getDrawPos(e);
+            if (pendingLandmark) {
+                drawCtx.font = '28px Arial';
+                drawCtx.fillText(pendingLandmark, pos.x - 14, pos.y + 10);
+                pendingLandmark = null;
+                saveDrawState();
+                return;
+            }
             if (currentTool === 'text') {
                 textPosition = pos;
-                document.getElementById('textModal').classList.add('show');
+                document.getElementById('textModal').style.display = 'flex';
                 document.getElementById('textInput').value = '';
-                setTimeout(() => document.getElementById('textInput').focus(), 100);
+                document.getElementById('textInput').focus();
                 return;
             }
-
             isDrawing = true;
             lastX = pos.x;
             lastY = pos.y;
             lineStartX = pos.x;
             lineStartY = pos.y;
-            points = [pos];
         }
 
         function draw(e) {
             if (!isDrawing) return;
-            e.preventDefault();
-
-            const pos = getPos(e);
-
+            const pos = getDrawPos(e);
             if (currentTool === 'pen' || currentTool === 'eraser') {
-                points.push(pos);
-
-                // Keep only recent points for performance
-                if (points.length > 5) {
-                    points.shift();
-                }
-
-                // Draw from last point to current
-                ctx.strokeStyle = currentTool === 'eraser' ? '#fff' : currentColor;
-                ctx.lineWidth = currentTool === 'eraser' ? currentSize * 4 : currentSize;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-
-                ctx.beginPath();
-                ctx.moveTo(lastX, lastY);
-                ctx.lineTo(pos.x, pos.y);
-                ctx.stroke();
-
+                drawCtx.strokeStyle = currentTool === 'eraser' ? '#fff' : currentColor;
+                drawCtx.lineWidth = currentTool === 'eraser' ? currentSize * 4 : currentSize;
+                drawCtx.lineCap = 'round';
+                drawCtx.beginPath();
+                drawCtx.moveTo(lastX, lastY);
+                drawCtx.lineTo(pos.x, pos.y);
+                drawCtx.stroke();
                 lastX = pos.x;
                 lastY = pos.y;
             }
@@ -727,172 +1107,78 @@
 
         function endDraw(e) {
             if (!isDrawing) return;
-            e.preventDefault();
-
             if (currentTool === 'line') {
-                const pos = getPos(e);
-                ctx.strokeStyle = currentColor;
-                ctx.lineWidth = currentSize;
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(lineStartX, lineStartY);
-                ctx.lineTo(pos.x, pos.y);
-                ctx.stroke();
+                const pos = getDrawPos(e);
+                drawCtx.strokeStyle = currentColor;
+                drawCtx.lineWidth = currentSize;
+                drawCtx.lineCap = 'round';
+                drawCtx.beginPath();
+                drawCtx.moveTo(lineStartX, lineStartY);
+                drawCtx.lineTo(pos.x, pos.y);
+                drawCtx.stroke();
             }
-
             isDrawing = false;
-            points = [];
-            saveState();
+            saveDrawState();
         }
 
-        // Mouse events
-        canvas.addEventListener('mousedown', startDraw);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', endDraw);
-        canvas.addEventListener('mouseleave', endDraw);
+        function saveDrawState() {
+            drawHistory.push(drawCanvas.toDataURL());
+            if (drawHistory.length > 30) drawHistory.shift();
+        }
 
-        // Touch events (with passive: false for preventDefault)
-        canvas.addEventListener('touchstart', startDraw, { passive: false });
-        canvas.addEventListener('touchmove', draw, { passive: false });
-        canvas.addEventListener('touchend', endDraw, { passive: false });
-        canvas.addEventListener('touchcancel', endDraw, { passive: false });
+        function undoDraw() {
+            if (drawHistory.length > 1) {
+                drawHistory.pop();
+                const img = new Image();
+                img.onload = () => {
+                    drawCtx.fillStyle = '#fff';
+                    drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+                    drawCtx.drawImage(img, 0, 0);
+                };
+                img.src = drawHistory[drawHistory.length - 1];
+            }
+        }
 
-        // ===== Landmarks =====
-        document.querySelectorAll('.landmark-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                pendingLandmark = btn.dataset.emoji;
-                // Brief visual feedback
-                btn.style.background = '#4a90d9';
-                btn.style.color = '#fff';
-                setTimeout(() => {
-                    btn.style.background = '';
-                    btn.style.color = '';
-                }, 200);
-            });
-        });
+        function clearDrawing() {
+            if (confirm('Clear the entire sketch?')) {
+                drawCtx.fillStyle = '#fff';
+                drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+                saveDrawState();
+            }
+        }
 
-        // ===== Text Modal =====
-        document.getElementById('confirmText').addEventListener('click', addText);
-        document.getElementById('cancelText').addEventListener('click', closeTextModal);
-        document.getElementById('textInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') addText();
-            if (e.key === 'Escape') closeTextModal();
-        });
+        function saveDrawing() {
+            const link = document.createElement('a');
+            link.download = 'address-sketch.png';
+            link.href = drawCanvas.toDataURL('image/png');
+            link.click();
+        }
 
         function addText() {
             const text = document.getElementById('textInput').value.trim();
             if (text && textPosition) {
-                ctx.font = `${16 + currentSize}px Arial`;
-                ctx.fillStyle = currentColor;
-                ctx.fillText(text, textPosition.x, textPosition.y);
-                saveState();
+                drawCtx.font = `${14 + currentSize}px Arial`;
+                drawCtx.fillStyle = currentColor;
+                drawCtx.fillText(text, textPosition.x, textPosition.y);
+                saveDrawState();
             }
             closeTextModal();
         }
 
         function closeTextModal() {
-            document.getElementById('textModal').classList.remove('show');
+            document.getElementById('textModal').style.display = 'none';
             textPosition = null;
         }
 
-        // ===== Action Buttons =====
-        document.getElementById('undoBtn').addEventListener('click', undo);
-
-        document.getElementById('saveBtn').addEventListener('click', () => {
-            const link = document.createElement('a');
-            link.download = 'address-sketch.png';
-
-            // Create a clean export canvas
-            const exportCanvas = document.createElement('canvas');
-            const rect = canvas.getBoundingClientRect();
-            exportCanvas.width = rect.width * 2;
-            exportCanvas.height = rect.height * 2;
-            const exportCtx = exportCanvas.getContext('2d');
-            exportCtx.fillStyle = '#fff';
-            exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-            exportCtx.drawImage(canvas, 0, 0, exportCanvas.width, exportCanvas.height);
-
-            link.href = exportCanvas.toDataURL('image/png');
-            link.click();
+        document.getElementById('textInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') addText();
+            if (e.key === 'Escape') closeTextModal();
         });
 
-        document.getElementById('printBtn').addEventListener('click', () => window.print());
-
-        document.getElementById('clearBtn').addEventListener('click', () => {
-            if (confirm('Clear the entire sketch?')) {
-                const rect = canvas.getBoundingClientRect();
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(0, 0, rect.width, rect.height);
-                saveState();
-                localStorage.removeItem('sketch_data');
-            }
-        });
-
-        // ===== PWA Install =====
-        let deferredPrompt;
-        const installBanner = document.getElementById('installBanner');
-        const installBtn = document.getElementById('installBtn');
-        const closeBanner = document.getElementById('closeBanner');
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-
-            // Show install banner if not dismissed
-            if (!localStorage.getItem('pwa_dismissed')) {
-                installBanner.classList.add('show');
-            }
-        });
-
-        installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const result = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-                installBanner.classList.remove('show');
-            }
-        });
-
-        closeBanner.addEventListener('click', () => {
-            installBanner.classList.remove('show');
-            localStorage.setItem('pwa_dismissed', 'true');
-        });
-
-        // ===== Offline Detection =====
-        const offlineBadge = document.getElementById('offlineBadge');
-
-        function updateOnlineStatus() {
-            if (!navigator.onLine) {
-                offlineBadge.classList.add('show');
-            } else {
-                offlineBadge.classList.remove('show');
-            }
-        }
-
-        window.addEventListener('online', updateOnlineStatus);
-        window.addEventListener('offline', updateOnlineStatus);
-        updateOnlineStatus();
-
-        // ===== Service Worker =====
+        // Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(() => {});
         }
-
-        // ===== Init =====
-        window.addEventListener('load', setupCanvas);
-        window.addEventListener('resize', () => {
-            // Debounced resize
-            clearTimeout(window.resizeTimer);
-            window.resizeTimer = setTimeout(setupCanvas, 250);
-        });
-
-        // Initialize AdSense (remove if not using ads yet)
-        try {
-            (adsbygoogle = window.adsbygoogle || []).push({});
-            (adsbygoogle = window.adsbygoogle || []).push({});
-            (adsbygoogle = window.adsbygoogle || []).push({});
-            (adsbygoogle = window.adsbygoogle || []).push({});
-        } catch(e) {}
     </script>
 </body>
 </html>
