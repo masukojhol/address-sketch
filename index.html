@@ -400,15 +400,19 @@
                 <div class="input-group">
                     <label>📍 FROM (Your Current Location)</label>
                     <div class="input-with-btn">
-                        <input type="text" id="fromLocation" placeholder="Click 'Use My Location' or enter address">
-                        <button class="location-btn" id="getLocationBtn" onclick="getCurrentLocation()">📍 Use My Location</button>
+                        <input type="text" id="fromLocation" placeholder="Click 'Use My Location' or select on map">
+                        <button class="location-btn" id="getLocationBtn" onclick="getCurrentLocation()">📍 My Location</button>
+                        <button class="location-btn" style="background:#3498db;" onclick="openMapPicker('from')">🗺️ Map</button>
                     </div>
-                    <div class="input-hint" id="locationHint">We'll detect your current location automatically</div>
+                    <div class="input-hint" id="locationHint">Auto-detecting your location...</div>
                 </div>
                 <div class="input-group">
-                    <label>🏠 TO (Your Home Address)</label>
-                    <input type="text" id="toLocation" placeholder="e.g., 123, 4th Cross, Jayanagar, Bangalore">
-                    <div class="input-hint">Enter your home/destination address</div>
+                    <label>🏠 TO (Your Destination)</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="toLocation" placeholder="Enter address or select on map">
+                        <button class="location-btn" style="background:#3498db;" onclick="openMapPicker('to')">🗺️ Select on Map</button>
+                    </div>
+                    <div class="input-hint" id="toHint">Enter address or pick location on map</div>
                 </div>
                 <button class="generate-btn" id="generateBtn" onclick="generateRoute()">
                     Generate Route Sketch
@@ -512,6 +516,27 @@
         </div>
     </div>
 
+    <!-- Map Picker Modal -->
+    <div id="mapPickerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;">
+        <div style="height:100%;display:flex;flex-direction:column;">
+            <div style="background:#4a90d9;color:white;padding:15px;display:flex;justify-content:space-between;align-items:center;">
+                <h3 style="font-size:16px;" id="mapPickerTitle">Select Location on Map</h3>
+                <button onclick="closeMapPicker()" style="background:none;border:none;color:white;font-size:24px;cursor:pointer;">×</button>
+            </div>
+            <div style="padding:10px;background:#fff;">
+                <input type="text" id="mapSearchInput" placeholder="Search location..." style="width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:15px;">
+            </div>
+            <div id="pickerMap" style="flex:1;"></div>
+            <div style="background:#fff;padding:15px;">
+                <div id="selectedLocationText" style="font-size:13px;color:#666;margin-bottom:10px;min-height:20px;">Tap on map to select location</div>
+                <div style="display:flex;gap:10px;">
+                    <button onclick="closeMapPicker()" style="flex:1;padding:12px;border:none;background:#e0e0e0;border-radius:8px;cursor:pointer;font-size:14px;">Cancel</button>
+                    <button onclick="confirmMapSelection()" id="confirmMapBtn" style="flex:1;padding:12px;border:none;background:#27ae60;color:white;border-radius:8px;cursor:pointer;font-size:14px;" disabled>Confirm Location</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -537,9 +562,157 @@
         let landmarks = [];
         let currentLocationCoords = null;
 
+        // Map Picker variables
+        let pickerMap = null;
+        let pickerMarker = null;
+        let pickerTarget = null; // 'from' or 'to'
+        let selectedPickerCoords = null;
+        let selectedPickerAddress = null;
+
         // Get current location on page load
         window.addEventListener('load', () => {
             getCurrentLocation();
+        });
+
+        // ==================== MAP PICKER ====================
+        function openMapPicker(target) {
+            pickerTarget = target;
+            selectedPickerCoords = null;
+            selectedPickerAddress = null;
+
+            const modal = document.getElementById('mapPickerModal');
+            const title = document.getElementById('mapPickerTitle');
+            const confirmBtn = document.getElementById('confirmMapBtn');
+            const selectedText = document.getElementById('selectedLocationText');
+
+            title.textContent = target === 'from' ? 'Select FROM Location' : 'Select TO Location';
+            selectedText.textContent = 'Tap on map to select location';
+            confirmBtn.disabled = true;
+            modal.style.display = 'block';
+
+            // Initialize or reset picker map
+            setTimeout(() => {
+                if (!pickerMap) {
+                    pickerMap = L.map('pickerMap').setView([20.5937, 78.9629], 5); // India center
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap'
+                    }).addTo(pickerMap);
+
+                    // Click to select location
+                    pickerMap.on('click', async (e) => {
+                        const { lat, lng } = e.latlng;
+                        selectLocationOnMap(lat, lng);
+                    });
+                } else {
+                    pickerMap.invalidateSize();
+                }
+
+                // If we have current location, center there
+                if (currentLocationCoords && target === 'from') {
+                    pickerMap.setView([currentLocationCoords.lat, currentLocationCoords.lng], 15);
+                } else if (currentLocationCoords) {
+                    pickerMap.setView([currentLocationCoords.lat, currentLocationCoords.lng], 13);
+                }
+
+                // Remove existing marker
+                if (pickerMarker) {
+                    pickerMap.removeLayer(pickerMarker);
+                    pickerMarker = null;
+                }
+            }, 100);
+        }
+
+        async function selectLocationOnMap(lat, lng) {
+            selectedPickerCoords = { lat, lng };
+
+            // Update marker
+            if (pickerMarker) {
+                pickerMap.removeLayer(pickerMarker);
+            }
+            pickerMarker = L.marker([lat, lng]).addTo(pickerMap);
+
+            // Reverse geocode
+            const selectedText = document.getElementById('selectedLocationText');
+            const confirmBtn = document.getElementById('confirmMapBtn');
+
+            selectedText.textContent = 'Getting address...';
+
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+                    { headers: { 'User-Agent': 'AddressSketchTool/1.0' } }
+                );
+                const data = await response.json();
+
+                if (data && data.display_name) {
+                    selectedPickerAddress = data.display_name;
+                    selectedText.textContent = selectedPickerAddress;
+                } else {
+                    selectedPickerAddress = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                    selectedText.textContent = selectedPickerAddress;
+                }
+            } catch (e) {
+                selectedPickerAddress = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                selectedText.textContent = selectedPickerAddress;
+            }
+
+            confirmBtn.disabled = false;
+        }
+
+        function confirmMapSelection() {
+            if (!selectedPickerCoords || !selectedPickerAddress) return;
+
+            if (pickerTarget === 'from') {
+                document.getElementById('fromLocation').value = selectedPickerAddress;
+                document.getElementById('locationHint').textContent = '✓ Location selected from map';
+                document.getElementById('locationHint').style.color = '#27ae60';
+                currentLocationCoords = selectedPickerCoords;
+            } else {
+                document.getElementById('toLocation').value = selectedPickerAddress;
+                document.getElementById('toHint').textContent = '✓ Location selected from map';
+                document.getElementById('toHint').style.color = '#27ae60';
+            }
+
+            closeMapPicker();
+        }
+
+        function closeMapPicker() {
+            document.getElementById('mapPickerModal').style.display = 'none';
+        }
+
+        // Search in map picker
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('mapSearchInput');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(async () => {
+                    const query = searchInput.value.trim();
+                    if (query.length < 3) return;
+
+                    try {
+                        const response = await fetch(
+                            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+                            { headers: { 'User-Agent': 'AddressSketchTool/1.0' } }
+                        );
+                        const data = await response.json();
+
+                        if (data && data.length > 0) {
+                            const lat = parseFloat(data[0].lat);
+                            const lng = parseFloat(data[0].lon);
+                            pickerMap.setView([lat, lng], 16);
+                            selectLocationOnMap(lat, lng);
+                        }
+                    } catch (e) {}
+                }, 500);
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                }
+            });
         });
 
         async function getCurrentLocation() {
