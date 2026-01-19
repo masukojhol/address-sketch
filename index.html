@@ -596,7 +596,12 @@
                     const mapOptions = {
                         center: { lat: 20.5937, lng: 78.9629 }, // India center
                         zoom: 5,
-                        mapTypeControl: false,
+                        mapTypeControl: true,
+                        mapTypeControlOptions: {
+                            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+                            position: google.maps.ControlPosition.TOP_LEFT,
+                            mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain']
+                        },
                         streetViewControl: false,
                         fullscreenControl: false
                     };
@@ -924,7 +929,12 @@
                 map = new google.maps.Map(document.getElementById('map'), {
                     center: { lat: from.lat, lng: from.lng },
                     zoom: 12,
-                    mapTypeControl: false,
+                    mapTypeControl: true,
+                    mapTypeControlOptions: {
+                        style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+                        position: google.maps.ControlPosition.TOP_RIGHT,
+                        mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain']
+                    },
                     streetViewControl: false
                 });
                 directionsRenderer = new google.maps.DirectionsRenderer({
@@ -977,9 +987,9 @@
             // Simplify route
             const simplified = simplifyRoute(route.coordinates, 0.00008);
 
-            // Draw route
+            // Draw route as clean continuous line
             ctx.strokeStyle = '#333';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 4;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
@@ -991,13 +1001,14 @@
             });
             ctx.stroke();
 
-            // Draw turn points
-            ctx.fillStyle = '#666';
+            // Draw major turn indicators (only significant turns, small markers)
             const turns = findTurns(simplified);
-            turns.forEach(turn => {
+            const majorTurns = turns.filter((_, i) => i % 3 === 0).slice(0, 5); // Limit to 5 major turns
+            ctx.fillStyle = '#333';
+            majorTurns.forEach(turn => {
                 const p = toCanvas(turn.lat, turn.lng);
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
                 ctx.fill();
             });
 
